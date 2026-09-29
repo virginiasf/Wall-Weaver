@@ -1,0 +1,3153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WallWeaver — Building Lace Cladding</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f5f2;--surface:#fff;--border:#e2ddd8;--border2:#c8c2bb;
+  --text:#1a1814;--muted:#7a746d;--accent:#2d5a3d;--alight:#e8f0eb;
+  --amid:#4a8c60;--danger:#8b2020;--r:8px;--rl:14px
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:Georgia,serif;background:var(--bg);color:var(--text);
+  display:grid;grid-template-columns:320px 1fr;grid-template-rows:auto 1fr}
+header{grid-column:1/-1;padding:16px 24px;background:var(--surface);
+  border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:12px}
+header h1{font-size:19px;font-weight:normal;color:var(--accent)}
+header p{font-size:13px;color:var(--muted);font-family:system-ui,sans-serif}
+.side{background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.main{padding:18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.lbl{font-family:system-ui,sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.grp{display:flex;flex-direction:column;gap:10px}
+.ctl{display:flex;flex-direction:column;gap:3px}
+.crow{display:flex;justify-content:space-between;align-items:baseline}
+.ctl label{font-size:13px;font-family:system-ui,sans-serif}
+.val{font-size:12px;font-family:'Courier New',monospace;color:var(--accent);
+  font-weight:700;min-width:50px;text-align:right}
+.valnum{font-size:12px;font-family:'Courier New',monospace;color:var(--accent);
+  font-weight:700;text-align:right;width:66px;border:1px solid var(--border2);
+  border-radius:5px;padding:3px 7px;background:var(--surface)}
+.valnum:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--alight)}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+.hint{font-size:11px;color:var(--muted);font-family:system-ui,sans-serif;line-height:1.4}
+
+/* ── Accordion ────────────────────────────────── */
+.acc-section{border-bottom:1px solid var(--border)}
+.acc-header{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 18px;cursor:pointer;user-select:none;
+  font-family:system-ui,sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface);transition:background .12s}
+.acc-header:hover{background:var(--bg)}
+.acc-header.open{color:var(--accent)}
+.acc-arrow{font-size:10px;transition:transform .2s;flex-shrink:0;margin-left:6px}
+.acc-header.open .acc-arrow{transform:rotate(180deg)}
+.acc-body{padding:0 18px 16px;display:flex;flex-direction:column;gap:10px}
+.acc-body.closed{display:none}
+
+/* Shape selector */
+.shape-row{display:flex;gap:5px}
+.shape-btn{flex:1;font-family:system-ui,sans-serif;font-size:12px;padding:8px 4px;
+  border-radius:var(--r);border:1px solid var(--border2);background:var(--surface);
+  cursor:pointer;transition:all .12s;color:var(--muted);text-align:center;line-height:1.3}
+.shape-btn:hover{background:var(--bg)}
+.shape-btn.on{background:var(--alight);border-color:var(--accent);color:var(--accent);font-weight:600}
+
+/* Mode toggle */
+.mode-row{display:flex;gap:0;margin-bottom:12px;border:1px solid var(--border2);
+  border-radius:var(--r);overflow:hidden}
+.mode-btn{flex:1;font-family:system-ui,sans-serif;font-size:12px;padding:9px 6px;
+  border:none;background:var(--surface);cursor:pointer;color:var(--muted);
+  transition:all .12s;text-align:center}
+.mode-btn.on{background:var(--alight);color:var(--accent);font-weight:600}
+.mode-btn:hover:not(.on){background:var(--bg)}
+
+.tog-row{display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-family:system-ui,sans-serif}
+.tog{width:36px;height:20px;background:var(--border2);border-radius:10px;
+  position:relative;cursor:pointer;border:none;transition:background .15s;flex-shrink:0}
+.tog.on{background:var(--accent)}
+.tog::after{content:'';position:absolute;width:14px;height:14px;background:#fff;
+  border-radius:50%;top:3px;left:3px;transition:left .15s}
+.tog.on::after{left:19px}
+.btn{font-family:system-ui,sans-serif;font-size:13px;padding:8px 14px;
+  border-radius:var(--r);border:1px solid var(--border2);background:var(--surface);
+  cursor:pointer;transition:all .12s;color:var(--text)}
+.btn:hover{background:var(--bg)}
+.btnp{background:var(--accent);color:#fff;border-color:var(--accent);
+  font-size:14px;padding:10px 18px;font-weight:500}
+.btnp:hover{background:#234830;border-color:#234830}
+.btnp:disabled{background:var(--border2);border-color:var(--border2);cursor:not-allowed}
+.panel{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 14px}
+.tab{font-family:system-ui,sans-serif;font-size:12px;padding:9px 12px;
+  border:none;background:none;cursor:pointer;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .1s}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.cvwrap{padding:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+  min-height:280px;align-items:center;background:#eeebe6}
+canvas{max-width:100%;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.empty{text-align:center;color:var(--muted);font-family:system-ui,sans-serif;
+  font-size:13px;line-height:1.9}
+.empty .ico{font-size:34px;margin-bottom:6px}
+.sbar{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:9px 13px;font-family:'Courier New',monospace;
+  font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;min-height:36px}
+.sbar.ok{color:var(--accent)}.sbar.err{color:var(--danger)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.pwrap{display:none}.pwrap.show{display:block}
+.pouter{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
+.pinner{height:100%;background:var(--accent);border-radius:2px;transition:width .1s}
+.divider{border:none;border-top:1px solid var(--border)}
+.ibox{background:var(--alight);border:1px solid #b8d4c0;border-radius:var(--r);
+  padding:10px 12px;font-size:12px;font-family:system-ui,sans-serif;color:#1e4029;line-height:1.5}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--rl);
+  padding:22px 14px;text-align:center;cursor:pointer;transition:all .15s;
+  background:var(--bg);position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--amid);background:var(--alight)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone .ico{font-size:22px;margin-bottom:4px}
+.upload-zone p{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;line-height:1.6}
+.upload-zone strong{color:var(--accent)}
+/* ── v12 additions ─────────────────────────────── */
+.subtabs{display:flex;gap:5px;padding:9px 14px;border-bottom:1px solid var(--border);
+  flex-wrap:wrap;align-items:center;background:var(--surface)}
+.subtab{font-family:system-ui,sans-serif;font-size:11px;padding:4px 10px;border-radius:20px;
+  border:1px solid var(--border2);background:var(--surface);cursor:pointer;color:var(--muted)}
+.subtab:hover{background:var(--bg)}
+.subtab.on{background:var(--alight);border-color:var(--accent);color:var(--accent);font-weight:600}
+.subtab .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.dimgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dimgrid .ctl{gap:2px}
+.dimgrid label{font-size:12px}
+.surfkey{display:flex;flex-wrap:wrap;gap:5px;font-family:system-ui,sans-serif;font-size:11px;color:var(--muted)}
+.surfkey span{display:flex;align-items:center;gap:4px}
+.surfkey i{width:9px;height:9px;border-radius:2px;display:block}
+.warnbox{background:#fdf3e7;border:1px solid #e0b070;border-radius:var(--r);
+  padding:9px 11px;font-size:12px;font-family:system-ui,sans-serif;color:#7a4a10;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>WallWeaver</h1>
+  <p>Clad a whole building · unroll the elevations · tile lace panels · export STL</p>
+</header>
+
+<div class="side">
+
+  <!-- 1 · BUILDING -->
+  <div class="acc-section">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>1 · Building</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="mode-row">
+        <button class="mode-btn on" id="btnModeShed">🏚 Gabled shed</button>
+        <button class="mode-btn" id="btnModeWall">▭ Single wall</button>
+      </div>
+
+      <!-- shed dimensions -->
+      <div id="panelShed">
+        <div class="dimgrid">
+          <div class="ctl">
+            <div class="crow"><label>Width (mm)</label></div>
+            <input type="number" class="valnum" id="nBW" style="width:100%" min="300" step="1" value="2438">
+            <input type="range" id="sBW" min="600" max="12000" value="2438" step="1">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Depth (mm)</label></div>
+            <input type="number" class="valnum" id="nBD" style="width:100%" min="300" step="1" value="2438">
+            <input type="range" id="sBD" min="600" max="16000" value="2438" step="1">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Eave height (mm)</label></div>
+            <input type="number" class="valnum" id="nEH" style="width:100%" min="300" step="1" value="2438">
+            <input type="range" id="sEH" min="600" max="6000" value="2438" step="1">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Roof rise (mm)</label></div>
+            <input type="number" class="valnum" id="nRR" style="width:100%" min="50" step="1" value="2200">
+            <input type="range" id="sRR" min="100" max="4000" value="2200" step="1">
+          </div>
+        </div>
+        <div class="tog-row" style="margin-top:10px">
+          <span>Clad the roof planes too</span>
+          <button class="tog on" id="togRoof"></button>
+        </div>
+        <div class="hint" id="shedHint"></div>
+      </div>
+
+      <!-- single wall -->
+      <div id="panelWall" style="display:none">
+        <div class="shape-row">
+          <button class="shape-btn on" data-shape="gabled">🏠<br>Gabled</button>
+          <button class="shape-btn" data-shape="rectangle">▭<br>Rect</button>
+          <button class="shape-btn" data-shape="arch">⌒<br>Arch</button>
+        </div>
+        <div class="ctl" style="margin-top:9px">
+          <div class="crow"><label>Facade width (mm)</label>
+            <input type="number" class="valnum" id="nFW" min="100" step="1" value="2400"></div>
+          <input type="range" id="sFW" min="500" max="6000" value="2400" step="100">
+        </div>
+        <div class="ctl">
+          <div class="crow"><label>Facade height (mm)</label>
+            <input type="number" class="valnum" id="nFH" min="100" step="1" value="3600"></div>
+          <input type="range" id="sFH" min="500" max="8000" value="3600" step="100">
+        </div>
+        <div class="ctl" id="ctlGH">
+          <div class="crow"><label id="lblGH">Gable height (mm)</label>
+            <input type="number" class="valnum" id="nGH" min="10" step="1" value="1200"></div>
+          <input type="range" id="sGH" min="100" max="3000" value="1200" step="50">
+          <span class="hint" id="hintGH">Height of the triangular gable above the wall</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b · DOOR -->
+  <div class="acc-section">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>Door</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="tog-row">
+        <span>Include a door</span>
+        <button class="tog on" id="togDoor"></button>
+      </div>
+      <div id="doorCtls" class="grp" style="margin-top:8px">
+        <div class="ctl">
+          <label style="font-size:13px;font-family:system-ui,sans-serif">On which wall</label>
+          <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap" id="doorWallRow"></div>
+        </div>
+        <div class="dimgrid">
+          <div class="ctl">
+            <div class="crow"><label>Width (mm)</label></div>
+            <input type="number" class="valnum" id="nDW" style="width:100%" min="200" step="1" value="813">
+            <input type="range" id="sDW" min="300" max="3000" value="813" step="1">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Height (mm)</label></div>
+            <input type="number" class="valnum" id="nDH" style="width:100%" min="300" step="1" value="2032">
+            <input type="range" id="sDH" min="500" max="4000" value="2032" step="1">
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="crow"><label>From wall's left edge (mm)</label>
+            <input type="number" class="valnum" id="nDX" min="0" step="1" value="813"></div>
+          <input type="range" id="sDX" min="0" max="6000" value="813" step="1">
+          <button class="btn" id="btnSnapDoor" style="width:100%;margin-top:6px">⇥ Snap the opening to the panel grid</button>
+          <div class="warnbox" id="doorSliver" style="display:none;margin-top:6px"></div>
+          <span class="hint">Measured along the wall as you face it from outside; the opening runs from the ground up.
+          The pattern carries on across the door — the leaf keeps the wall's coursing and its panels are cut from the
+          same run of lace, so everything lines up when it is shut.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · PATTERN SOURCE -->
+  <div class="acc-section">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>2 · Pattern</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="mode-row">
+        <button class="mode-btn on" id="btnSrcUpload">↑ Upload image</button>
+        <button class="mode-btn" id="btnSrcGen">✦ Generate</button>
+      </div>
+      <div id="panelUpload">
+        <div class="upload-zone" id="dropZone">
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="ico">🪡</div>
+          <p>Drop a lace photo or illustration<br>
+            <strong>PNG · JPG · WebP</strong><br>
+            <span style="font-size:11px">B&amp;W or greyscale &mdash; grey depth becomes relief layers</span></p>
+        </div>
+        <div class="ctl" style="margin-top:10px">
+          <label style="font-size:13px;font-family:system-ui,sans-serif">How the image fills the elevations</label>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <button class="shape-btn on" id="fitTile" style="flex:1;padding:6px 4px;font-size:11px">Repeat at motif size</button>
+            <button class="shape-btn" id="fitStretch" style="flex:1;padding:6px 4px;font-size:11px">Stretch to fit</button>
+          </div>
+        </div>
+        <div class="ctl" id="ctlMotif">
+          <div class="crow"><label>Motif width (mm)</label><span class="val" id="vMotif">800mm</span></div>
+          <input type="range" id="sMotif" min="100" max="6000" value="800" step="0.1">
+          <div class="crow" style="margin-top:9px"><label>Motif height (mm)</label><span class="val" id="vMotifH">800mm</span></div>
+          <input type="range" id="sMotifH" min="100" max="8000" value="800" step="0.1" disabled>
+          <div style="display:flex;gap:4px;margin-top:7px">
+            <button class="shape-btn on" id="btnAspect" style="flex:1;padding:6px 4px;font-size:11px">Keep the image&rsquo;s proportions</button>
+          </div>
+          <span class="hint">One repeat spans this much wall, and repeats run continuously around the corners. Release the link to squash or stretch the motif &mdash; the two sliders then work independently.</span>
+        </div>
+        <div class="ctl" id="ctlZoom" style="display:none">
+          <div class="crow"><label>Zoom</label><span class="val" id="vZoom">100%</span></div>
+          <input type="range" id="sZoom" min="25" max="400" value="100" step="5">
+          <span class="hint">100% fits the image once across the whole building. Above that you are seeing part of it enlarged &mdash; use the slides below to choose which part.</span>
+        </div>
+        <div class="ctl" id="ctlOffset">
+          <div class="crow"><label>Slide around the building</label><span class="val" id="vOffX">0mm</span></div>
+          <input type="range" id="sOffX" min="-5000" max="5000" value="0" step="5">
+          <div class="crow" style="margin-top:9px"><label>Slide up / down</label><span class="val" id="vOffY">0mm</span></div>
+          <input type="range" id="sOffY" min="-5000" max="5000" value="0" step="5">
+          <div style="display:flex;gap:4px;margin-top:7px">
+            <button class="shape-btn" id="offNudgeL" style="flex:0 0 34px;padding:6px 4px;font-size:12px" title="Nudge left one step">←</button>
+            <button class="shape-btn" id="offNudgeD" style="flex:0 0 34px;padding:6px 4px;font-size:12px" title="Nudge down one step">↓</button>
+            <button class="shape-btn" id="offNudgeU" style="flex:0 0 34px;padding:6px 4px;font-size:12px" title="Nudge up one step">↑</button>
+            <button class="shape-btn" id="offNudgeR" style="flex:0 0 34px;padding:6px 4px;font-size:12px" title="Nudge right one step">→</button>
+            <button class="shape-btn" id="offCentre" style="flex:1;padding:6px 4px;font-size:11px">Recentre</button>
+          </div>
+          <span class="hint" id="hintOffset">Moves the pattern over the building without moving the panel grid. Sideways it wraps right around &mdash; the elevations are one closed loop, so the pattern never runs out.</span>
+        </div>
+      </div>
+      <div id="panelGen" style="display:none">
+        <div class="grp">
+          <div class="ctl">
+            <div class="crow"><label>Trunk density</label><span class="val" id="vTrunks">10</span></div>
+            <input type="range" id="sTrunks" min="2" max="20" value="10" step="1">
+            <span class="hint">Main stems rising from the base of every wall</span>
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Spread angle</label><span class="val" id="vSpread">48°</span></div>
+            <input type="range" id="sSpread" min="8" max="65" value="48" step="1">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Branch taper</label><span class="val" id="vTaper">0.72</span></div>
+            <input type="range" id="sTaper" min="0.50" max="0.85" value="0.72" step="0.01">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Strand weight</label><span class="val" id="vWeight">1.0×</span></div>
+            <input type="range" id="sWeight" min="0.3" max="3.5" value="1.0" step="0.1">
+          </div>
+          <div class="ctl">
+            <div class="crow"><label>Seed</label><span class="val" id="vSeed">42</span></div>
+            <input type="range" id="sSeed" min="1" max="999" value="42" step="1">
+          </div>
+          <button class="btn btnp" id="btnGenerate" style="width:100%">Generate pattern ↓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 · IMAGE PROCESSING -->
+  <div class="acc-section" id="secProcess">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>3 · Image Processing</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="ctl">
+        <div class="crow"><label>Threshold</label><span class="val" id="vThresh">128</span></div>
+        <input type="range" id="sThresh" min="10" max="245" value="128" step="1">
+        <span class="hint">Pixels darker than this become lace strands</span>
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Strand dilation (px)</label><span class="val" id="vDilate">2px</span></div>
+        <input type="range" id="sDilate" min="0" max="10" value="2" step="1">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Blur / denoise</label><span class="val" id="vBlur">1px</span></div>
+        <input type="range" id="sBlur" min="0" max="6" value="1" step="1">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Relief layers</label><span class="val" id="vLevels">4</span></div>
+        <input type="range" id="sLevels" min="1" max="8" value="4" step="1">
+        <span class="hint">1 = flat black &amp; white &middot; more = greyscale relief, darker areas print taller</span>
+      </div>
+      <div class="tog-row">
+        <span>Invert (light strands on dark)</span>
+        <button class="tog" id="togInvert"></button>
+      </div>
+      <button class="btn" id="btnProcess" style="width:100%" disabled>Preview mask ↓</button>
+    </div>
+  </div>
+
+  <!-- 4 · 3D PARAMETERS -->
+  <div class="acc-section">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>4 · Panels &amp; Relief</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="ctl">
+        <div class="crow"><label>Panel size (mm)</label><span class="val" id="vSize">203.2mm</span></div>
+        <input type="number" class="valnum" id="nSize" style="width:100%" min="25" max="3000" step="0.1" value="203.2">
+        <input type="range" id="sSize" min="50" max="1200" value="203.2" step="0.1">
+        <div style="display:flex;gap:4px;margin-top:6px">
+          <button class="shape-btn" id="sz8"  style="flex:1;min-width:0;padding:5px 4px;font-size:11px">8″</button>
+          <button class="shape-btn" id="sz12" style="flex:1;min-width:0;padding:5px 4px;font-size:11px">12″</button>
+          <button class="shape-btn" id="sz16" style="flex:1;min-width:0;padding:5px 4px;font-size:11px">16″</button>
+          <button class="shape-btn" id="sz24" style="flex:1;min-width:0;padding:5px 4px;font-size:11px">24″</button>
+        </div>
+        <span class="hint" id="hintSize">Type an exact size or drag. 8″ = 203.2mm · 12″ = 304.8mm · 16″ = 406.4mm · every surface is tiled from its bottom-left corner</span>
+      </div>
+      <div class="ctl" id="ctlRepeat">
+        <div class="crow"><label>Identical panels</label><span class="val" id="vRepeat">—</span></div>
+        <div class="ibox" id="repeatInfo" style="background:#f5f0e8;border-color:#c8c2bb;color:var(--text);margin-top:4px">Build the mask to compare panels.</div>
+        <button class="shape-btn" id="btnFindDup" style="width:100%;margin-top:6px;padding:6px 4px;font-size:11px">Find identical panels</button>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:9px;font-family:system-ui,sans-serif;font-size:12px;color:var(--muted)">
+          <span>Make one motif span</span>
+          <input type="number" class="valnum" id="nTieX" min="1" max="16" step="1" value="2" style="width:46px">
+          <span>&times;</span>
+          <input type="number" class="valnum" id="nTieY" min="1" max="16" step="1" value="2" style="width:46px">
+          <span>panels</span>
+        </div>
+        <button class="shape-btn" id="btnTie" style="width:100%;margin-top:6px;padding:6px 4px;font-size:11px">Tie the motif to the panel grid</button>
+        <span class="hint" id="hintRepeat">Panels can only repeat when the motif and the panel pitch share a common measure. Tying the motif to a whole number of panels forces that, and the elevation collapses onto a few parts you print once and cast many times.</span>
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Coursing (bond)</label><span class="val" id="vBond">Stack</span></div>
+        <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+          <button class="shape-btn on" id="bondStack" style="min-width:0;flex:1;padding:5px 4px;font-size:11px">Stack</button>
+          <button class="shape-btn" id="bondHalf"  style="min-width:0;flex:1;padding:5px 4px;font-size:11px">½ Running</button>
+          <button class="shape-btn" id="bondThird" style="min-width:0;flex:1;padding:5px 4px;font-size:11px">⅓ Third</button>
+          <button class="shape-btn" id="bondQtr"   style="min-width:0;flex:1;padding:5px 4px;font-size:11px">¼ Quarter</button>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:5px">
+          <button class="shape-btn on" id="bondDirRows" style="min-width:0;flex:1;padding:5px 4px;font-size:11px">↔ Shift rows</button>
+          <button class="shape-btn"    id="bondDirCols" style="min-width:0;flex:1;padding:5px 4px;font-size:11px">↕ Shift columns</button>
+        </div>
+        <input type="range" id="sBond" min="0" max="0.5" value="0" step="0.01" style="margin-top:6px">
+        <span class="hint">Offsets each successive course like a masonry bond. Edge tiles are cut short.</span>
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Extrusion height (mm)</label><span class="val" id="vHeight">5.4mm</span></div>
+        <input type="range" id="sHeight" min="0.8" max="8" value="5.4" step="0.2">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Raised edging (mm)</label><span class="val" id="vCordH">1.6mm</span></div>
+        <input type="range" id="sCordH" min="0" max="5" value="1.6" step="0.2">
+        <span class="hint">Cordonnet: rounded raised bead along pattern edges &middot; 0 = off</span>
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Edging width (mm)</label><span class="val" id="vCordW">2.0mm</span></div>
+        <input type="range" id="sCordW" min="0.5" max="4" value="2" step="0.1">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Mesh base height (mm)</label><span class="val" id="vBase">3.0mm</span></div>
+        <input type="range" id="sBase" min="0.4" max="4" value="3" step="0.2">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Mesh spacing (mm)</label><span class="val" id="vMesh">7.0mm</span></div>
+        <input type="range" id="sMesh" min="1" max="12" value="7" step="0.5">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Mesh strand width (mm)</label><span class="val" id="vMeshW">1.8mm</span></div>
+        <input type="range" id="sMeshW" min="0.4" max="2.5" value="1.8" step="0.1">
+      </div>
+      <div class="ctl">
+        <div class="crow"><label>Pattern detail</label><span class="val" id="vRes">25 px/100mm</span></div>
+        <input type="range" id="sRes" min="6" max="60" value="25" step="1">
+        <span class="hint" id="hintRes">Pixels per 100 mm of wall — the same detail everywhere, whatever the building size</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4b · SCREW HOLES -->
+  <div class="acc-section">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>Screw Holes</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="tog-row">
+        <span>Enable screw holes</span>
+        <button class="tog on" id="togScrews"></button>
+      </div>
+      <div id="screwCtls" class="grp" style="margin-top:6px">
+        <div class="ctl">
+          <label style="font-size:13px;font-family:system-ui,sans-serif">Screw size</label>
+          <div class="screw-size-row" id="screwSizeRow" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
+          <span class="hint" id="screwSizeHint">Select a standard US screw size</span>
+        </div>
+        <div class="ctl">
+          <div class="crow"><label>Inset from corner (mm)</label><span class="val" id="vScrewI">12.7mm</span></div>
+          <input type="range" id="sScrewI" min="5" max="30" value="12.7" step="0.1">
+        </div>
+        <div class="ctl">
+          <div class="crow"><label>Collar width (mm)</label><span class="val" id="vCollar">4.0mm</span></div>
+          <input type="range" id="sCollar" min="1" max="8" value="4" step="0.5">
+          <span class="hint">Solid ring of material around each hole. Wider spreads the load and resists the panel working loose under wind buffeting; it also eats into the lace around the fixing.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · EXPORT -->
+  <div class="acc-section">
+    <div class="acc-header open" onclick="toggleAcc(this)">
+      <span>5 · Export</span><span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="ibox" id="exportInfo">Set the building up, then generate or upload a pattern to export.</div>
+      <div class="ibox" id="panelInfo" style="display:none;background:#f5f0e8;border-color:#c8c2bb;color:var(--text)"></div>
+      <div class="warnbox" id="bigWarn" style="display:none"></div>
+      <div class="tog-row">
+        <span>Emboss tile labels on STL</span>
+        <button class="tog on" id="togLabels"></button>
+      </div>
+      <div id="labelCtls" class="grp" style="margin-top:6px">
+        <div class="ctl">
+          <label style="font-size:12px;font-family:system-ui,sans-serif;color:var(--muted)">Label size</label>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <button class="shape-btn" id="lblSzS" style="min-width:0;padding:5px 8px;font-size:11px">S</button>
+            <button class="shape-btn on" id="lblSzM" style="min-width:0;padding:5px 8px;font-size:11px">M</button>
+            <button class="shape-btn" id="lblSzL" style="min-width:0;padding:5px 8px;font-size:11px">L</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label style="font-size:12px;font-family:system-ui,sans-serif;color:var(--muted)">Label corner</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+            <button class="shape-btn" id="lblTL" style="padding:5px 4px;font-size:11px">↖ Top-left</button>
+            <button class="shape-btn" id="lblTR" style="padding:5px 4px;font-size:11px">Top-right ↗</button>
+            <button class="shape-btn on" id="lblBL" style="padding:5px 4px;font-size:11px">↙ Bot-left</button>
+            <button class="shape-btn" id="lblBR" style="padding:5px 4px;font-size:11px">Bot-right ↘</button>
+          </div>
+        </div>
+        <div class="hint">Each panel is stamped with its surface letter, column and row — FA1 is the front wall, column A,
+        bottom course. Door panels share their wall's row and column, so DB2 lifts out of FB2.</div>
+      </div>
+      <button class="btn" id="btnAssemblyMap" style="width:100%;background:#f0f5f1;border-color:#2d5a3d;color:#2d5a3d" disabled>🗺 Assembly Map</button>
+      <button class="btn btnp" id="btnExport" disabled style="width:100%">↓ Export all panels (one zip)</button>
+      <button class="btn btnp" id="btnExportSurf" disabled style="width:100%;font-size:13px;padding:9px 8px;background:#4a7c5f;border-color:#4a7c5f">↓ Export the surface on screen</button>
+      <button class="btn btnp" id="btnExportOne" disabled style="width:100%;font-size:13px;padding:9px 8px;background:#4a7c5f;border-color:#4a7c5f">↓ Download selected panel</button>
+      <button class="btn btnp" id="btnExportUniq" disabled style="width:100%;font-size:13px;padding:9px 8px;background:#7a5c3a;border-color:#7a5c3a">↓ Export one of each identical panel (zip)</button>
+      <div style="display:flex;gap:8px;align-items:center;font-family:system-ui,sans-serif;font-size:12px;color:var(--muted)" id="selDisplay">
+        <span>Click a panel in the Elevations view to select it</span>
+      </div>
+      <div class="pwrap" id="pwrap">
+        <div style="font-size:11px;font-family:system-ui,sans-serif;color:var(--muted)" id="plabel">Building…</div>
+        <div class="pouter"><div class="pinner" id="pbar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MAIN PANEL -->
+<div class="main">
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab" data-tab="pattern">Pattern source</button>
+      <button class="tab on" data-tab="elev">Elevations</button>
+      <button class="tab" data-tab="build">3D building</button>
+    </div>
+    <div class="subtabs" id="subtabs"></div>
+    <div class="cvwrap" id="cvwrap"></div>
+  </div>
+  <div class="sbar" id="sbar"><span class="dot"></span><span>Ready — set the shed size, then generate or upload a pattern</span></div>
+</div>
+
+<script>
+'use strict';
+
+// ── Accordion ─────────────────────────────────────────────────────────────────
+function toggleAcc(header) {
+  const body = header.nextElementSibling;
+  const isOpen = !body.classList.contains('closed');
+  body.classList.toggle('closed', isOpen);
+  header.classList.toggle('open', !isOpen);
+}
+
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let srcImg = null, genCanvas = null;
+let maskData = null, maskW = 0, maskH = 0, maskCanvas = null;
+let maskSig = '';   // bumped whenever the mask is rebuilt, so panel groups re-derive
+let mode        = 'shed';     // 'shed' | 'wall'
+let facadeShape = 'gabled';   // single-wall mode only
+let srcMode     = 'upload';   // 'upload' | 'generate'
+let fitMode     = 'tile';     // 'tile'   | 'stretch'
+let aspectLock  = true;       // motif height follows the image's own proportions
+let inverted    = false;
+let cladRoof    = true;
+let doorOn      = true;
+let doorSurf    = 'F';
+let activeTab   = 'elev';
+let activeSurf  = 'all';
+let selectedPanel = null;     // {surf,row,col}
+let bondDir     = 'rows';
+
+const cvwrap = $('cvwrap'), sbar = $('sbar');
+const pwrap = $('pwrap'), pbar = $('pbar'), plabel = $('plabel');
+const btnProcess = $('btnProcess'), btnExport = $('btnExport');
+const btnExportOne = $('btnExportOne'), btnExportSurf = $('btnExportSurf');
+
+const getBW=()=>num('nBW'), getBD=()=>num('nBD'), getEH=()=>num('nEH'), getRR=()=>num('nRR');
+const getFW=()=>num('nFW'), getFH=()=>num('nFH'), getGH=()=>num('nGH');
+const getDW=()=>num('nDW'), getDH=()=>num('nDH'), getDX=()=>num('nDX');
+const slopeLen = () => Math.hypot(getBW()/2, getRR());
+
+// ── The building, unrolled ────────────────────────────────────────────────────
+// Every surface lives in one "development strip": the four walls laid end to end
+// (front → right → back → left), with each roof plane folded up above the eave
+// wall it rises from. One pattern field covers the strip, so a motif runs
+// continuously around every corner and up over the eaves at one constant scale.
+// Strip coordinates are mm. y is measured DOWN from the top of the strip.
+let SURF = [], STRIP = { w: 1, h: 1 };
+
+function refreshModel() {
+  if (mode === 'wall') {
+    const FW = Math.max(1, getFW()), FH = Math.max(1, getFH());
+    const shp = facadeShape === 'rectangle' ? 'rect' : facadeShape;
+    SURF = [{ code:'W', tag:'', name:'Wall', kind:'wall', x0:0, y0:0, w:FW, h:FH,
+              shape:shp, gable: shp==='rect' ? 0 : Math.min(getGH(), FH*0.96), tint:'#2d5a3d' }];
+    STRIP = { w:FW, h:FH };
+  } else {
+    const W=Math.max(1,getBW()), D=Math.max(1,getBD()), EH=Math.max(1,getEH()), RR=Math.max(1,getRR());
+    const SL = Math.hypot(W/2, RR);
+    const wallTop = EH + RR;
+    const stripH  = cladRoof ? Math.max(wallTop, EH + SL) : wallTop;
+    const S = [];
+    S.push({code:'F', tag:'F', name:'Front (gable end)', kind:'wall', x0:0,       y0:stripH-wallTop, w:W, h:wallTop, shape:'gabled', gable:RR, tint:'#2d5a3d'});
+    S.push({code:'R', tag:'R', name:'Right side',        kind:'wall', x0:W,       y0:stripH-EH,      w:D, h:EH,      shape:'rect',   gable:0,  tint:'#3f7f63'});
+    S.push({code:'B', tag:'B', name:'Back (gable end)',  kind:'wall', x0:W+D,     y0:stripH-wallTop, w:W, h:wallTop, shape:'gabled', gable:RR, tint:'#5c8a3f'});
+    S.push({code:'L', tag:'L', name:'Left side',         kind:'wall', x0:2*W+D,   y0:stripH-EH,      w:D, h:EH,      shape:'rect',   gable:0,  tint:'#2f6f7a'});
+    if (cladRoof) {
+      S.push({code:'RS', tag:'RS', name:'Roof — right slope', kind:'roof', x0:W,     y0:stripH-(EH+SL), w:D, h:SL, shape:'rect', gable:0, tint:'#8a6a2e'});
+      S.push({code:'LS', tag:'LS', name:'Roof — left slope',  kind:'roof', x0:2*W+D, y0:stripH-(EH+SL), w:D, h:SL, shape:'rect', gable:0, tint:'#a8873f'});
+    }
+    SURF = S;
+    STRIP = { w: 2*(W+D), h: stripH };
+  }
+  if (!SURF.some(s => s.code === doorSurf)) doorSurf = SURF[0].code;
+  if (activeSurf !== 'all' && activeSurf !== 'D' && !SURF.some(s => s.code === activeSurf)) activeSurf = 'all';
+  if (activeSurf === 'D' && !doorOn) activeSurf = 'all';
+  buildDoorWallRow();
+  buildSubtabs();
+  updateShedHint();
+  syncOffsetRange();
+  syncPanelRange();   // the smallest safe panel depends on the building's size
+}
+const surfByCode = c => SURF.find(s => s.code === c);
+
+// ── Profiles, openings, and the inside test ───────────────────────────────────
+function insideProfile(s, u, v) {           // u,v normalised in the surface; v=0 at its top
+  if (s.shape === 'rect' || !s.gable) return true;
+  const gf = s.gable / s.h;
+  if (v >= gf) return true;
+  if (s.shape === 'arch') {
+    const dx = (u - 0.5) / 0.5, dy = (v - gf) / gf;
+    return dx*dx + dy*dy <= 1;
+  }
+  return Math.abs(u - 0.5) <= 0.5 * (v / gf);   // gabled
+}
+// The opening, clamped so it always sits inside the wall that carries it
+function doorRect() {
+  const host = surfByCode(doorSurf);
+  let w = getDW(), h = getDH(), x = getDX();
+  if (host) {
+    w = Math.min(w, host.w);
+    h = Math.min(h, host.h);
+    x = Math.max(0, Math.min(host.w - w, x));
+  }
+  return { x, w, h };
+}
+function doorHit(s, lx, lyUp) {
+  if (!doorOn || s.code !== doorSurf) return false;
+  const d = doorRect();
+  return lx >= d.x && lx < d.x + d.w && lyUp >= 0 && lyUp < d.h;
+}
+// The door leaf is not a hole in the pattern — it is a piece cut out of it.
+// It carries the wall's own coursing, so joints and motifs run straight across
+// the closed door. It rides on top of its host wall rather than sitting in SURF,
+// which keeps surfAtStrip, the generator and the 3D frames working on real faces.
+function doorSurfaceDesc() {
+  if (!doorOn) return null;
+  const host = surfByCode(doorSurf);
+  if (!host) return null;
+  const d = doorRect();
+  return { code:'D', tag:'D', name:'Door leaf', kind:'door', host:host.code,
+           x0: host.x0 + d.x, y0: host.y0 + host.h - d.h, w: d.w, h: d.h,
+           shape:'rect', gable:0, tint:'#8a5a2e' };
+}
+function allSurfaces() {
+  const d = doorSurfaceDesc();
+  return d ? SURF.concat([d]) : SURF;
+}
+const surfOrPiece = c => allSurfaces().find(s => s.code === c);
+function surfAtStrip(sx, sy) {
+  for (const s of SURF)
+    if (sx >= s.x0 && sx < s.x0 + s.w && sy >= s.y0 && sy < s.y0 + s.h) return s;
+  return null;
+}
+// nx, ny normalised over the whole strip; ny = 0 is the top edge.
+// `piece` picks which material the caller means:
+//   undefined — the whole clad field, door included (this is what the lace fills)
+//   'wall'    — wall material only, the door cut away
+//   'door'    — the door leaf only
+function isInsideStrip(nx, ny, piece) {
+  const sx = nx * STRIP.w, sy = ny * STRIP.h;
+  const s = surfAtStrip(sx, sy);
+  if (!s) return false;
+  if (!insideProfile(s, (sx - s.x0) / s.w, (sy - s.y0) / s.h)) return false;
+  const onDoor = doorHit(s, sx - s.x0, s.h - (sy - s.y0));
+  if (piece === 'wall') return !onDoor;
+  if (piece === 'door') return onDoor;
+  return true;
+}
+
+// Outline of a surface in strip mm (y down) and in local mm (y up from its base)
+function surfOutline(s) {
+  const x0=s.x0, x1=s.x0+s.w, y0=s.y0, y1=s.y0+s.h;
+  if (s.shape === 'gabled' && s.gable) {
+    const gy = y0 + s.gable;
+    return [[(x0+x1)/2,y0],[x1,gy],[x1,y1],[x0,y1],[x0,gy]];
+  }
+  if (s.shape === 'arch' && s.gable) {
+    const gy=y0+s.gable, cx=(x0+x1)/2, rx=s.w/2, ry=s.gable;
+    const pts=[[x0,y1],[x0,gy]];
+    for (let i=0;i<=28;i++){ const a=Math.PI+Math.PI*i/28; pts.push([cx+rx*Math.cos(a), gy+ry*Math.sin(a)]); }
+    pts.push([x1,y1]);
+    return pts;
+  }
+  return [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+}
+function surfOutlineLocal(s) {
+  return surfOutline(s).map(([x,y]) => [x - s.x0, s.h - (y - s.y0)]);
+}
+
+// ── Panel layout ──────────────────────────────────────────────────────────────
+// Each surface is tiled from its own bottom-left corner, so course 1 always sits
+// on the ground (or on the eave, for a roof plane) and cuts land at the top.
+// ── Panel size ────────────────────────────────────────────────────────────────
+// The typed box is the real value; the slider is a handle onto it. Typing is
+// allowed past the slider's ends, so the floor here is not taste but arithmetic:
+// panels small enough to make tens of thousands of tiles would lock the browser
+// up, and the safe floor depends on how big the building is.
+const PANEL_MIN = 25, PANEL_MAX = 3000, MAX_TILES = 12000;
+function minPanelMM() {
+  const approx = Math.sqrt((STRIP.w * STRIP.h) / MAX_TILES);
+  return Math.max(PANEL_MIN, Math.ceil(approx * 10) / 10);
+}
+const getPanelMM = () => {
+  const n = parseFloat($('nSize') ? $('nSize').value : NaN);
+  const lo = minPanelMM();
+  if (!isNaN(n) && n >= lo) return Math.min(PANEL_MAX, n);
+  // Half-typed or out-of-range: fall back to the slider so nothing ever tiles
+  // the building at "4 mm" between two keystrokes.
+  return Math.min(PANEL_MAX, Math.max(lo, parseFloat($('sSize').value) || lo));
+};
+const getBondFrac = () => Math.max(0, Math.min(0.5, parseFloat($('sBond').value) || 0));
+// Width of the solid ring left around each fixing. Wind buffeting, not one-off
+// load, is what works a light panel loose, so this is the bearing area that
+// has to survive years of cycling.
+const getCollarW  = () => { const e = $('sCollar'); return e ? Math.max(0.5, parseFloat(e.value) || 2) : 2; };
+
+function surfaceTiles(s) {
+  const pmm = getPanelMM(), frac = getBondFrac(), out = [];
+  if (bondDir === 'rows') {
+    const nR = Math.ceil(s.h / pmm - 1e-9);
+    for (let r = 0; r < nR; r++) {
+      const yb = r * pmm, hh = Math.min(pmm, s.h - yb);
+      if (hh <= 1e-6) continue;
+      const off = frac > 0 ? ((r * frac) % 1) * pmm : 0;
+      let a = off > 1e-6 ? off - pmm : 0, i = 0;
+      while (a < s.w - 1e-6) {
+        const a0 = Math.max(0, a), a1 = Math.min(s.w, a + pmm);
+        if (a1 - a0 > 1e-6)
+          out.push({ surf:s.code, row:r, col:i++, x0:s.x0+a0, w:a1-a0, y0:s.y0+s.h-yb-hh, h:hh });
+        a += pmm;
+      }
+    }
+  } else {
+    const nC = Math.ceil(s.w / pmm - 1e-9);
+    for (let c = 0; c < nC; c++) {
+      const xb = c * pmm, ww = Math.min(pmm, s.w - xb);
+      if (ww <= 1e-6) continue;
+      const off = frac > 0 ? ((c * frac) % 1) * pmm : 0;
+      let a = off > 1e-6 ? off - pmm : 0, i = 0;
+      while (a < s.h - 1e-6) {
+        const a0 = Math.max(0, a), a1 = Math.min(s.h, a + pmm);
+        if (a1 - a0 > 1e-6)
+          out.push({ surf:s.code, row:i++, col:c, x0:s.x0+xb, w:ww, y0:s.y0+s.h-a1, h:a1-a0 });
+        a += pmm;
+      }
+    }
+    out.sort((p,q) => p.col - q.col || p.row - q.row);
+  }
+  return out;
+}
+function getTileLayout() {
+  const tiles = [], bySurf = {};
+  for (const s of SURF) {
+    const t = surfaceTiles(s);
+    for (const x of t) x.piece = 'wall';
+    bySurf[s.code] = t;
+    for (const x of t) tiles.push(x);
+  }
+  // The door leaf: every wall tile that overlaps the opening, clipped to it.
+  // Same rows and columns as the wall, so DB2 is the piece that lifts out of FB2
+  // and the coursing runs straight across the shut door.
+  const dS = doorSurfaceDesc();
+  if (dS) {
+    const dx0 = dS.x0, dx1 = dS.x0 + dS.w, dy0 = dS.y0, dy1 = dS.y0 + dS.h;
+    const leaf = [];
+    for (const t of bySurf[dS.host]) {
+      const ix0 = Math.max(t.x0, dx0), ix1 = Math.min(t.x0 + t.w, dx1);
+      const iy0 = Math.max(t.y0, dy0), iy1 = Math.min(t.y0 + t.h, dy1);
+      if (ix1 - ix0 > 1 && iy1 - iy0 > 1)
+        leaf.push({ surf:'D', piece:'door', row:t.row, col:t.col,
+                    x0:ix0, y0:iy0, w:ix1-ix0, h:iy1-iy0 });
+    }
+    bySurf.D = leaf;
+    for (const x of leaf) tiles.push(x);
+  }
+  return { pmm:getPanelMM(), tiles, bySurf, frac:getBondFrac(), dir:bondDir, total:tiles.length };
+}
+function tileLabel(t) {
+  const s = surfOrPiece(t.surf);
+  return (s ? s.tag : '') + colLabel(t.col) + String(t.row + 1);
+}
+
+function tilePixels(t) {
+  const kx = maskW / STRIP.w, ky = maskH / STRIP.h;
+  const px0 = Math.max(0, Math.min(maskW - 1, Math.round(t.x0 * kx)));
+  const py0 = Math.max(0, Math.min(maskH - 1, Math.round(t.y0 * ky)));
+  const px1 = Math.min(maskW, Math.round((t.x0 + t.w) * kx));
+  const py1 = Math.min(maskH, Math.round((t.y0 + t.h) * ky));
+  return { px0, py0, pw: px1 - px0, ph: py1 - py0 };
+}
+const MIN_PARTIAL_FRAC = 0.0025;
+let statCache = new Map(), statKey = '';
+function layoutKey() {
+  return [mode, Math.round(STRIP.w), Math.round(STRIP.h), getPanelMM(), getBondFrac(), bondDir,
+          maskW, maskH, doorOn, doorSurf, getDX(), getDW(), getDH(),
+          getCollarW(), screwDiameter, screwsEnabled].join('|');
+}
+function tileStats(t) {
+  const k = layoutKey();
+  if (k !== statKey) { statCache.clear(); statKey = k; }
+  const id = t.surf + ':' + t.row + ':' + t.col;
+  let v = statCache.get(id);
+  if (v) return v;
+  const want = t.piece === 'door' ? 2 : 1;
+  const { px0, py0, pw, ph } = tilePixels(t);
+  v = { solid:false, frac:0 };
+  if (pw > 0 && ph > 0) {
+    let inside = 0, solid = false;
+    for (let py = py0; py < py0 + ph; py++) {
+      const row = py * maskW;
+      for (let px = px0; px < px0 + pw; px++) {
+        const on = !insideMap || insideMap[row + px] === want;
+        if (on) {
+          inside++;
+          if (maskData[row + px]) solid = true;
+        }
+      }
+    }
+    v = { solid, frac: inside / (pw * ph) };
+  }
+  statCache.set(id, v);
+  return v;
+}
+const tileHasSolid    = t => tileStats(t).solid;
+const tileFacadeFrac  = t => tileStats(t).frac;
+// ── Identical panels ──────────────────────────────────────────────────────────
+// Two panels are the same print when their patch of the mask is the same, pixel
+// for pixel, at the same size. The mask already has the profile cuts and the
+// door opening burnt into it, so one hash over the panel's rectangle settles
+// pattern, gable slope and door in a single comparison.
+//
+// Whether any duplicates EXIST is arithmetic, not luck: the pattern field
+// repeats every motif, panels sit on a pitch, and a panel can only recur if
+// those two numbers are commensurate. 800 mm motifs on 406.4 mm panels share no
+// common measure, so nothing repeats. Tie the motif to the grid and the whole
+// elevation collapses onto a handful of parts.
+let groupCache = null, groupKey = '';
+function panelGroupKey() {
+  return layoutKey() + '|' + maskSig;
+}
+function hashTile(t) {
+  const { px0, py0, pw, ph } = tilePixels(t);
+  if (pw <= 0 || ph <= 0) return null;
+  let h = 0x811c9dc5;
+  h = Math.imul(h ^ pw, 0x01000193);
+  h = Math.imul(h ^ ph, 0x01000193);
+  for (let y = 0; y < ph; y++) {
+    const row = (py0 + y) * maskW + px0;
+    for (let x = 0; x < pw; x++) h = Math.imul(h ^ maskData[row + x], 0x01000193);
+  }
+  return (h >>> 0).toString(36) + ':' + pw + 'x' + ph;
+}
+function groupCode(i) {
+  let s = '';
+  do { s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i / 26) - 1; } while (i >= 0);
+  return s;
+}
+// A panel that sits wholly in open wall is decided by geometry, not by pixels.
+// The pattern field repeats every motif, so two such panels carry the same lace
+// exactly when their offsets into that field agree. Comparing the rasterised
+// pixels instead would fail here: the mask is drawn at sub-pixel positions, so
+// genuinely identical panels land a fraction of a pixel apart and no two
+// bitmaps ever match. Panels cut by a gable, an edge or the door fall back to
+// the bitmap, where the cut — not the phase — is what has to agree.
+function patternPhase(t) {
+  const Mw = motifWmm(), Mh = motifHmm();
+  if (!(Mw > 0 && Mh > 0)) return null;
+  const pmm = getPanelMM();
+  if (Math.abs(t.w - pmm) > 0.01 || Math.abs(t.h - pmm) > 0.01) return null;  // a cut panel
+  const st = tileStats(t);
+  if (!st.solid) return null;                                                 // clipped by profile or door
+  // Dilation and blur reach across the panel edge, so the margin has to be open
+  // wall too, or a panel beside a gable would be called equal to one in open field.
+  const pad = Math.max(0, parseInt($('sDilate').value) || 0) + Math.max(0, parseInt($('sBlur').value) || 0) + 1;
+  const { px0, py0, pw, ph } = tilePixels(t);
+  for (let y = py0 - pad; y < py0 + ph + pad; y++) {
+    if (y < 0 || y >= maskH) return null;
+    const row = y * maskW;
+    for (let x = px0 - pad; x < px0 + pw + pad; x++) {
+      if (x < 0 || x >= maskW || insideMap[row + x] !== 1) return null;
+    }
+  }
+  const qx = wrapMod(t.x0 - getOffX(), Mw);
+  const qy = wrapMod(t.y0 - (STRIP.h - getOffY()), Mh);
+  // 0.05 mm is far below anything the printer resolves, but coarse enough to
+  // absorb floating-point drift across a twelve-metre elevation.
+  return 'p' + Math.round(qx * 20) + ',' + Math.round(qy * 20)
+       + ',' + Math.round(t.w * 20) + 'x' + Math.round(t.h * 20);
+}
+
+// → { types:[{code,count,rep,members}], byId:Map(tileId→code), unique, total }
+function panelGroups() {
+  const k = panelGroupKey();
+  if (groupCache && groupKey === k) return groupCache;
+  const tiles = getTileLayout().tiles.filter(t => tilePrintable(t));
+  const seen = new Map(), byId = new Map();
+  let openTiles = 0, cutTiles = 0;
+  for (const t of tiles) {
+    const ph = patternPhase(t);
+    const h = ph || hashTile(t);
+    if (h === null) continue;
+    if (ph) openTiles++; else cutTiles++;
+    let g = seen.get(h);
+    if (!g) { g = { hash:h, rep:t, members:[], open:!!ph }; seen.set(h, g); }
+    g.members.push(t);
+  }
+  const types = [...seen.values()].sort((a, b) => b.members.length - a.members.length);
+  types.forEach((g, i) => {
+    g.code = groupCode(i); g.count = g.members.length;
+    for (const t of g.members) byId.set(t.surf + ':' + t.row + ':' + t.col, g.code);
+  });
+  groupCache = { types, byId, unique: types.length, total: tiles.length,
+                 openTiles, cutTiles,
+                 openTypes: types.filter(g => g.open).length,
+                 cutTypes:  types.filter(g => !g.open).length };
+  groupKey = k;
+  return groupCache;
+}
+
+function tilePrintable(t) {
+  if (!maskData) return false;
+  const st = tileStats(t);
+  // Both conditions, not either. `solid` means the tile actually contains lace;
+  // `frac` means enough of it lands on the building to be worth a panel. With
+  // `or`, a tile clipped to a sliver by a gable slope but holding no pattern at
+  // all still counted as printable, and exported as an STL with zero triangles.
+  return st.solid && st.frac >= MIN_PARTIAL_FRAC;
+}
+
+// ── UI wiring: mode, dimensions, door ─────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  $('btnModeShed').classList.toggle('on', m === 'shed');
+  $('btnModeWall').classList.toggle('on', m === 'wall');
+  $('panelShed').style.display = m === 'shed' ? '' : 'none';
+  $('panelWall').style.display = m === 'wall' ? '' : 'none';
+  activeSurf = 'all';
+  refreshModel(); scheduleRebuild(); rerender();
+}
+$('btnModeShed').addEventListener('click', () => setMode('shed'));
+$('btnModeWall').addEventListener('click', () => setMode('wall'));
+
+document.querySelectorAll('.shape-btn[data-shape]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.shape-btn[data-shape]').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    facadeShape = btn.dataset.shape;
+    const showGH = facadeShape !== 'rectangle';
+    $('ctlGH').style.display = showGH ? 'flex' : 'none';
+    $('lblGH').textContent  = facadeShape === 'arch' ? 'Arch height (mm)' : 'Gable height (mm)';
+    $('hintGH').textContent = facadeShape === 'arch'
+      ? 'Height of the semicircular arch' : 'Height of the triangular gable above the wall';
+    refreshModel(); scheduleRebuild(); rerender();
+  });
+});
+
+// Slider ⇄ exact-value input. Typing wins; the slider is a quick handle.
+function bindDim(rangeId, numId, minVal) {
+  const r = $(rangeId), n = $(numId);
+  const after = () => { refreshModel(); scheduleRebuild(); rerender(); };
+  r.addEventListener('input', () => { n.value = r.value; after(); });
+  n.addEventListener('input', () => {
+    const v = parseFloat(n.value);
+    if (!isNaN(v)) r.value = Math.min(Math.max(v, parseFloat(r.min)), parseFloat(r.max));
+    after();
+  });
+  n.addEventListener('blur', () => {
+    let v = parseFloat(n.value);
+    if (isNaN(v) || v < minVal) v = minVal;
+    n.value = Math.round(v); after();
+  });
+}
+['sBW nBW 300','sBD nBD 300','sEH nEH 300','sRR nRR 50',
+ 'sFW nFW 100','sFH nFH 100','sGH nGH 10',
+ 'sDW nDW 200','sDH nDH 300','sDX nDX 0'].forEach(spec => {
+  const [r,n,m] = spec.split(' ');
+  bindDim(r, n, parseFloat(m));
+});
+
+// ── Panel size: typed box ⇄ slider ────────────────────────────────────────────
+// Unlike the building dimensions this keeps decimals — 406.4 mm is 16 inches
+// exactly, and rounding it to 406 would put a millimetre of drift into every
+// course across the elevation.
+function syncPanelRange() {
+  const s = $('sSize'), n = $('nSize');
+  if (!s || !n) return;
+  const lo = minPanelMM();
+  s.min = lo; n.min = lo;
+  if (parseFloat(s.value) < lo) s.value = lo;
+  showPanelSize(getPanelMM(), false);
+}
+function showPanelSize(mm, note) {
+  $('vSize').textContent = (Math.round(mm * 10) / 10) + 'mm';
+  const inches = mm / 25.4;
+  const near = Math.abs(inches - Math.round(inches * 2) / 2) < 0.01
+             ? ` (${Math.round(inches * 2) / 2}″)` : '';
+  $('hintSize').textContent = note
+    ? note
+    : `${(Math.round(mm*10)/10)} mm${near} — type an exact size or drag. `
+      + `8″ = 203.2mm · 12″ = 304.8mm · 16″ = 406.4mm · every surface is tiled from its bottom-left corner`;
+}
+function applyPanelSize(mm, fromBox) {
+  const lo = minPanelMM();
+  let note = '';
+  if (mm < lo) {
+    mm = lo;
+    note = `Panels smaller than ${lo} mm would cut this building into more than `
+         + `${MAX_TILES.toLocaleString()} pieces, so the size has been held at ${lo} mm. `
+         + `Make the building smaller, or accept this as the finest panel it can take.`;
+  } else if (mm > PANEL_MAX) {
+    mm = PANEL_MAX;
+    note = `Held at the ${PANEL_MAX} mm maximum panel size.`;
+  }
+  const s = $('sSize'), n = $('nSize');
+  s.value = Math.min(parseFloat(s.max), Math.max(parseFloat(s.min), mm));
+  if (!fromBox) n.value = Math.round(mm * 10) / 10;
+  showPanelSize(mm, note);
+  clearSelection(); updatePanelInfo(); rerender();
+}
+$('sSize').addEventListener('input', () => {
+  $('nSize').value = Math.round(parseFloat($('sSize').value) * 10) / 10;
+  applyPanelSize(parseFloat($('sSize').value), false);
+});
+$('nSize').addEventListener('input', () => {
+  const v = parseFloat($('nSize').value);
+  if (!isNaN(v) && v >= minPanelMM() && v <= PANEL_MAX) applyPanelSize(v, true);
+});
+$('nSize').addEventListener('blur', () => {
+  let v = parseFloat($('nSize').value);
+  if (isNaN(v)) v = getPanelMM();
+  v = Math.min(PANEL_MAX, Math.max(minPanelMM(), v));
+  $('nSize').value = Math.round(v * 10) / 10;
+  applyPanelSize(v, false);
+});
+$('nSize').addEventListener('keydown', e => { if (e.key === 'Enter') $('nSize').blur(); });
+
+// ── Repeat report ─────────────────────────────────────────────────────────────
+// Hashing every panel costs real time on a big elevation, so it runs by itself
+// only while the count is small and waits for the button beyond that.
+const AUTO_DUP_LIMIT = 1500;
+function updateRepeatInfo(force) {
+  const v = $('vRepeat'), el = $('repeatInfo');
+  if (!v || !el) return;
+  if (!maskData) { v.textContent = '—'; el.textContent = 'Build the mask to compare panels.'; return; }
+  const total = getTileLayout().tiles.length;
+  if (!force && total > AUTO_DUP_LIMIT && !(groupCache && groupKey === panelGroupKey())) {
+    v.textContent = '—';
+    el.textContent = `${total.toLocaleString()} tiles — press “Find identical panels” to compare them.`;
+    $('btnExportUniq').disabled = true;
+    return;
+  }
+  const g = panelGroups();
+  const repeats = g.total - g.unique;
+  v.textContent = `${g.unique} of ${g.total}`;
+  const top = g.types.filter(t => t.count > 1).slice(0, 6)
+                .map(t => `${t.code}×${t.count}`).join('  ');
+  // The two populations behave completely differently and averaging them hides
+  // the useful number, so report them apart.
+  const openLine = g.openTiles
+    ? `${g.openTiles} sit in open wall and reduce to ${g.openTypes}`
+    : 'none sit in open wall';
+  const cutLine = g.cutTiles
+    ? `${g.cutTiles} are cut by a gable, an edge or the door and stay unique`
+    : '';
+  let txt;
+  if (repeats === 0) {
+    txt = `No two panels are alike. The motif spans ${Math.round(motifWmm()*10)/10} mm against `
+        + `${Math.round(getPanelMM()*10)/10} mm panels — no common measure, so every panel catches `
+        + `the pattern at its own phase. Tie the motif to the grid below to change that.`;
+  } else {
+    const pct = Math.round(repeats / g.total * 100);
+    txt = `${g.unique} distinct panels make all ${g.total} — ${pct}% fewer to print. `
+        + `Of the ${g.total}, ${openLine}${cutLine ? '; ' + cutLine : ''}. `
+        + (top ? `Most repeated: ${top}` : '');
+  }
+  el.textContent = txt;
+  $('btnExportUniq').disabled = false;
+}
+$('btnFindDup').addEventListener('click', () => {
+  setStatus('Comparing panels…');
+  setTimeout(() => { updateRepeatInfo(true); setStatus('Panel comparison done', 'ok'); }, 20);
+});
+
+// ── Tie the motif to the panel grid ───────────────────────────────────────────
+// This is what actually creates repeats. It forces the motif onto a whole
+// number of panels in each direction, which means releasing the image's own
+// proportions — so say by how much they are being bent.
+const motifWmm = () => (fitMode === 'tile'
+  ? Math.max(20, parseFloat($('sMotif').value)) : STRIP.w * getZoom());
+$('btnTie').addEventListener('click', () => {
+  const nx = Math.max(1, Math.min(16, Math.round(parseFloat($('nTieX').value) || 1)));
+  const ny = Math.max(1, Math.min(16, Math.round(parseFloat($('nTieY').value) || 1)));
+  const pmm = getPanelMM();
+  const w = nx * pmm, h = ny * pmm;
+  if (fitMode !== 'tile') $('fitTile').click();
+  const sW = $('sMotif'), sH = $('sMotifH');
+  sW.value = Math.min(parseFloat(sW.max), Math.max(parseFloat(sW.min), w));
+  aspectLock = false;
+  sH.value = Math.min(parseFloat(sH.max), Math.max(parseFloat(sH.min), h));
+  // Read the values back — a slider can only hold what its step allows, and the
+  // whole point here is that the motif lands on the grid exactly.
+  const wOn = parseFloat(sW.value), hOn = parseFloat(sH.value);
+  $('vMotif').textContent = (Math.round(wOn * 10) / 10) + 'mm';
+  syncMotifH(); syncOffsetRange();
+  const trueAR = imgAR(), forcedAR = hOn / wOn;
+  const bend = Math.round(Math.abs(forcedAR / trueAR - 1) * 100);
+  $('hintRepeat').textContent =
+    `Motif set to ${Math.round(wOn*10)/10} × ${Math.round(hOn*10)/10} mm — ${nx} × ${ny} panels. `
+    + (bend > 2
+        ? `The image is stretched ${bend}% out of its own proportions to fit the grid; `
+          + `${forcedAR > trueAR ? 'taller' : 'wider'} than it really is. Try other whole numbers if that shows.`
+        : `That is within 2% of the image's own proportions, so nothing looks stretched.`)
+    + ` Press “Find identical panels” once the mask rebuilds.`;
+  scheduleRebuild();
+});
+[['sz8',8],['sz12',12],['sz16',16],['sz24',24]].forEach(([id, inch]) => {
+  $(id).addEventListener('click', () => {
+    const mm = Math.round(inch * 25.4 * 10) / 10;
+    $('nSize').value = mm;
+    applyPanelSize(mm, false);
+  });
+});
+
+$('togRoof').addEventListener('click', () => {
+  cladRoof = !cladRoof;
+  $('togRoof').classList.toggle('on', cladRoof);
+  refreshModel(); scheduleRebuild(); rerender();
+});
+$('togDoor').addEventListener('click', () => {
+  doorOn = !doorOn;
+  $('togDoor').classList.toggle('on', doorOn);
+  $('doorCtls').style.display = doorOn ? '' : 'none';
+  scheduleRebuild(); rerender();
+});
+function buildDoorWallRow() {
+  const row = $('doorWallRow');
+  if (!row) return;
+  row.innerHTML = '';
+  SURF.filter(s => s.kind === 'wall').forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'shape-btn' + (s.code === doorSurf ? ' on' : '');
+    b.style.cssText = 'flex:1 1 auto;min-width:0;padding:5px 7px;font-size:11px';
+    b.textContent = mode === 'wall' ? 'This wall' : s.name.replace(/ \(.*\)/, '');
+    b.addEventListener('click', () => { doorSurf = s.code; buildDoorWallRow(); scheduleRebuild(); rerender(); });
+    row.appendChild(b);
+  });
+}
+// With the leaf on the wall's coursing, an opening that lands mid-panel leaves
+// slivers down its edges. Snapping the reveal onto the grid makes the leaf whole panels.
+$('btnSnapDoor').addEventListener('click', () => {
+  const host = surfByCode(doorSurf);
+  if (!host) return;
+  const pmm = getPanelMM(), d = doorRect();
+  let x0 = Math.round(d.x / pmm) * pmm;
+  let x1 = Math.round((d.x + d.w) / pmm) * pmm;
+  if (x1 - x0 < pmm) x1 = x0 + pmm;
+  x0 = Math.max(0, Math.min(host.w - pmm, x0));
+  x1 = Math.min(host.w, Math.max(x0 + pmm, x1));
+  let h = Math.max(pmm, Math.min(host.h, Math.round(d.h / pmm) * pmm));
+  const put = (numId, rangeId, v) => {
+    $(numId).value = Math.round(v);
+    const r = $(rangeId);
+    r.value = Math.min(Math.max(v, parseFloat(r.min)), parseFloat(r.max));
+  };
+  put('nDX','sDX', x0); put('nDW','sDW', x1 - x0); put('nDH','sDH', h);
+  refreshModel(); scheduleRebuild(); rerender();
+  setStatus(`Opening snapped to the grid — ${Math.round(x1-x0)} × ${Math.round(h)} mm`, 'ok');
+});
+
+function updateDoorWarning() {
+  const el = $('doorSliver');
+  if (!el) return;
+  if (!doorOn || !maskData) { el.style.display = 'none'; return; }
+  const leaf = getTileLayout().bySurf.D || [];
+  if (!leaf.length) { el.style.display = 'none'; return; }
+  const pmm = getPanelMM();
+  let min = Infinity;
+  leaf.forEach(t => { min = Math.min(min, t.w, t.h); });
+  if (min < pmm * 0.2) {
+    el.style.display = '';
+    el.textContent = `The opening lands mid-panel — the narrowest piece on the leaf is ${Math.round(min)} mm.`
+      + ` Snap it to the grid, or nudge the width or position, to get whole panels.`;
+  } else el.style.display = 'none';
+}
+
+function updateShedHint() {
+  const el = $('shedHint');
+  if (!el) return;
+  if (mode !== 'shed') { el.textContent = ''; return; }
+  const W=getBW(), D=getBD(), EH=getEH(), RR=getRR(), SL=slopeLen();
+  const pitch = (RR / (W/2) * 12).toFixed(1);
+  el.innerHTML = `Ridge runs front to back · roof pitch ${pitch}:12 · rafter slope ${Math.round(SL)} mm`
+    + ` · unrolled elevation ${Math.round(STRIP.w)} × ${Math.round(STRIP.h)} mm`;
+}
+
+// ── Subtabs: which surface is on screen ───────────────────────────────────────
+function buildSubtabs() {
+  const el = $('subtabs');
+  const mk = (code, label, tint) =>
+    `<button class="subtab${activeSurf===code?' on':''}" data-surf="${code}">` +
+    (tint ? `<i class="sw" style="background:${tint}"></i>` : '') + label + '</button>';
+  el.innerHTML = mk('all', mode==='shed' ? 'All — unrolled' : 'Whole wall', '')
+    + allSurfaces().map(s => mk(s.code, s.name, s.tint)).join('');
+  el.querySelectorAll('[data-surf]').forEach(b => b.addEventListener('click', () => {
+    activeSurf = b.dataset.surf;
+    btnExportSurf.disabled = !(maskData && activeSurf !== 'all');
+    buildSubtabs(); rerender();
+  }));
+  el.style.display = (activeTab === 'pattern') ? 'none' : '';
+}
+
+// ── Source mode / fit ─────────────────────────────────────────────────────────
+$('btnSrcUpload').addEventListener('click', () => {
+  srcMode = 'upload';
+  $('btnSrcUpload').classList.add('on'); $('btnSrcGen').classList.remove('on');
+  $('panelUpload').style.display = ''; $('panelGen').style.display = 'none';
+  $('secProcess').style.display = '';
+});
+$('btnSrcGen').addEventListener('click', () => {
+  srcMode = 'generate';
+  $('btnSrcGen').classList.add('on'); $('btnSrcUpload').classList.remove('on');
+  $('panelUpload').style.display = 'none'; $('panelGen').style.display = '';
+  $('secProcess').style.display = 'none';
+});
+$('fitTile').addEventListener('click', () => {
+  fitMode = 'tile';
+  $('fitTile').classList.add('on'); $('fitStretch').classList.remove('on');
+  $('ctlMotif').style.display = ''; $('ctlZoom').style.display = 'none';
+  syncMotifH(); syncOffsetRange(); scheduleRebuild();
+});
+$('fitStretch').addEventListener('click', () => {
+  fitMode = 'stretch';
+  $('fitStretch').classList.add('on'); $('fitTile').classList.remove('on');
+  $('ctlMotif').style.display = 'none'; $('ctlZoom').style.display = '';
+  syncOffsetRange(); scheduleRebuild();
+});
+
+// ── Scaling the pattern ───────────────────────────────────────────────────────
+// Linked, the height slider is a read-out of what the width implies. Released,
+// it becomes a real control and the motif can be squashed or drawn out.
+function syncMotifH() {
+  const el = $('sMotifH'); if (!el) return;
+  el.disabled = aspectLock;
+  if (aspectLock) {
+    const lo = parseFloat(el.min), hi = parseFloat(el.max);
+    el.value = Math.max(lo, Math.min(hi, Math.round(motifHmm())));
+  }
+  $('vMotifH').textContent = (Math.round(motifHmm() * 10) / 10) + 'mm';
+  $('btnAspect').classList.toggle('on', aspectLock);
+  $('btnAspect').textContent = aspectLock
+    ? 'Keep the image’s proportions' : 'Free — width and height are independent';
+}
+$('btnAspect').addEventListener('click', () => {
+  // Releasing the link hands over the height it already had, so nothing jumps.
+  if (aspectLock) $('sMotifH').value = Math.round(motifHmm());
+  aspectLock = !aspectLock;
+  syncMotifH(); syncOffsetRange(); scheduleRebuild();
+});
+
+// ── Sliding the pattern over the building ─────────────────────────────────────
+// In Repeat mode one motif is the whole cycle, so the sliders span exactly one
+// repeat and that is all the travel there is. In Stretch mode the image covers
+// the strip once, so the sliders span half the building each way.
+function syncOffsetRange() {
+  const ex = $('sOffX'), ey = $('sOffY');
+  if (!ex || !ey) return;
+  let rx, ry, tiling = (fitMode === 'tile');
+  if (tiling) {
+    rx = Math.max(20, parseFloat($('sMotif').value));
+    ry = Math.max(20, motifHmm());
+  } else {
+    // Zoomed in, the field wraps at the zoomed size, so the travel grows with it.
+    const z = getZoom();
+    rx = STRIP.w * z / 2; ry = STRIP.h * z / 2;
+  }
+  rx = Math.max(100, Math.round(rx)); ry = Math.max(100, Math.round(ry));
+  [[ex, rx, 'vOffX'], [ey, ry, 'vOffY']].forEach(([el, r, out]) => {
+    let v = parseFloat(el.value) || 0;
+    // Repeat mode wraps, so fold the value back into range without moving the
+    // pattern; Stretch has real ends, so clamp.
+    if (tiling) { v = wrapMod(v, r); if (v > r / 2) v -= r; }
+    else        { v = Math.max(-r, Math.min(r, v)); }
+    // The step divides the travel exactly, so dead centre and a whole motif
+    // both land on the slider's grid rather than one millimetre off.
+    el.min = -r; el.max = r; el.step = r / 200;
+    el.value = v;
+    $(out).textContent = Math.round(parseFloat(el.value)) + 'mm';
+  });
+  $('hintOffset').textContent = tiling
+    ? 'Moves the pattern over the building; the panel grid, coursing and door stay put. One full slide sideways equals one motif — beyond that it simply repeats.'
+    : (getZoom() > 1.001
+        ? 'Moves the enlarged image over the building — this is how you choose which part of it lands where. It wraps, so no slide can leave bare wall.'
+        : 'Moves the single stretched image over the building. Sideways it wraps round the corner; sliding up or down brings the far edge round, so expect a horizontal seam.');
+}
+function setOff(axis, v) {
+  const el = $(axis === 'x' ? 'sOffX' : 'sOffY');
+  const out = $(axis === 'x' ? 'vOffX' : 'vOffY');
+  el.value = Math.max(parseFloat(el.min), Math.min(parseFloat(el.max), v));
+  out.textContent = Math.round(parseFloat(el.value)) + 'mm';
+}
+// Nudge by exactly one slider step, so a nudge one way and back lands on the
+// same wall rather than a step off it.
+function nudge(axis, dir) {
+  const el = $(axis === 'x' ? 'sOffX' : 'sOffY');
+  const s = parseFloat(el.step) || 1;
+  setOff(axis, (axis === 'x' ? getOffX() : getOffY()) + dir * s);
+  scheduleRebuild();
+}
+$('offNudgeL').addEventListener('click', () => nudge('x', -1));
+$('offNudgeR').addEventListener('click', () => nudge('x',  1));
+$('offNudgeU').addEventListener('click', () => nudge('y',  1));
+$('offNudgeD').addEventListener('click', () => nudge('y', -1));
+$('offCentre').addEventListener('click', () => { setOff('x', 0); setOff('y', 0); scheduleRebuild(); });
+
+// ── Slider readouts ───────────────────────────────────────────────────────────
+const sliders = [
+  { el:$('sTrunks'), out:$('vTrunks'), fmt:v=>Math.round(v) },
+  { el:$('sSpread'), out:$('vSpread'), fmt:v=>Math.round(v)+'°' },
+  { el:$('sTaper'),  out:$('vTaper'),  fmt:v=>v.toFixed(2) },
+  { el:$('sWeight'), out:$('vWeight'), fmt:v=>v.toFixed(1)+'×' },
+  { el:$('sSeed'),   out:$('vSeed'),   fmt:v=>Math.round(v) },
+  { el:$('sThresh'), out:$('vThresh'), fmt:v=>Math.round(v), onChange:scheduleRebuild },
+  { el:$('sDilate'), out:$('vDilate'), fmt:v=>Math.round(v)+'px', onChange:scheduleRebuild },
+  { el:$('sBlur'),   out:$('vBlur'),   fmt:v=>Math.round(v)+'px', onChange:scheduleRebuild },
+  { el:$('sLevels'), out:$('vLevels'), fmt:v=>Math.round(v), onChange:scheduleRebuild },
+  { el:$('sMotif'),  out:$('vMotif'),  fmt:v=>Math.round(v)+'mm',
+    onChange:()=>{ syncMotifH(); syncOffsetRange(); scheduleRebuild(); } },
+  { el:$('sMotifH'), out:$('vMotifH'), fmt:v=>Math.round(v)+'mm',
+    onChange:()=>{ syncOffsetRange(); scheduleRebuild(); } },
+  { el:$('sZoom'),   out:$('vZoom'),   fmt:v=>Math.round(v)+'%',
+    onChange:()=>{ syncOffsetRange(); scheduleRebuild(); } },
+  { el:$('sOffX'),   out:$('vOffX'),   fmt:v=>Math.round(v)+'mm', onChange:scheduleRebuild },
+  { el:$('sOffY'),   out:$('vOffY'),   fmt:v=>Math.round(v)+'mm', onChange:scheduleRebuild },
+  { el:$('sHeight'), out:$('vHeight'), fmt:v=>v.toFixed(1)+'mm' },
+  { el:$('sCordH'),  out:$('vCordH'),  fmt:v=>v==0?'off':v.toFixed(1)+'mm' },
+  { el:$('sCordW'),  out:$('vCordW'),  fmt:v=>v.toFixed(1)+'mm' },
+  { el:$('sBase'),   out:$('vBase'),   fmt:v=>v.toFixed(1)+'mm' },
+  { el:$('sMesh'),   out:$('vMesh'),   fmt:v=>v.toFixed(1)+'mm' },
+  { el:$('sMeshW'),  out:$('vMeshW'),  fmt:v=>v.toFixed(1)+'mm' },
+  { el:$('sRes'),    out:$('vRes'),    fmt:v=>Math.round(v)+' px/100mm', onChange:()=>{ updateResHint(); scheduleRebuild(); } },
+  { el:$('sScrewI'), out:$('vScrewI'), fmt:v=>v.toFixed(1)+'mm' },
+  { el:$('sCollar'), out:$('vCollar'), fmt:v=>v.toFixed(1)+'mm',
+    onChange:()=>{ clearSelection(); updatePanelInfo(); rerender(); } },
+  { el:$('sBond'),   out:$('vBond'),   fmt:v=>bondName(v), onChange:syncBondUI },
+];
+sliders.forEach(({el,out,fmt,onChange}) =>
+  el.addEventListener('input', () => { out.textContent = fmt(parseFloat(el.value)); if (onChange) onChange(); }));
+
+function updateResHint() {
+  const d = maskDims();
+  $('hintRes').textContent =
+    `Pixels per 100 mm of wall — same detail everywhere. Working mask ${d.W} × ${d.H} px`
+    + (d.clamped ? ' (capped for speed)' : '');
+}
+
+// ── Coursing / bond ───────────────────────────────────────────────────────────
+function bondName(v) {
+  if (v < 0.005) return 'Stack';
+  if (Math.abs(v-0.5) < 0.02) return '½ Running';
+  if (Math.abs(v-1/3) < 0.02) return '⅓ Third';
+  if (Math.abs(v-0.25) < 0.02) return '¼ Quarter';
+  return Math.round(v*100) + '%';
+}
+function syncBondUI() {
+  const v = getBondFrac();
+  $('vBond').textContent = bondName(v);
+  const on = (id, yes) => $(id).classList.toggle('on', yes);
+  on('bondStack', v < 0.005);
+  on('bondHalf',  Math.abs(v-0.5) < 0.02);
+  on('bondThird', Math.abs(v-1/3) < 0.02);
+  on('bondQtr',   Math.abs(v-0.25) < 0.02);
+  on('bondDirRows', bondDir === 'rows');
+  on('bondDirCols', bondDir === 'cols');
+  clearSelection(); updatePanelInfo(); rerender();
+}
+[['bondStack',0],['bondHalf',0.5],['bondThird',1/3],['bondQtr',0.25]].forEach(([id,val]) =>
+  $(id).addEventListener('click', () => { $('sBond').value = val; syncBondUI(); }));
+$('bondDirRows').addEventListener('click', () => { bondDir='rows'; syncBondUI(); });
+$('bondDirCols').addEventListener('click', () => { bondDir='cols'; syncBondUI(); });
+
+function clearSelection() {
+  selectedPanel = null;
+  btnExportOne.disabled = true;
+  $('selDisplay').innerHTML = '<span style="color:var(--muted)">Click a panel in the Elevations view to select it</span>';
+}
+
+// ── Tile labels ───────────────────────────────────────────────────────────────
+let labelsEnabled = true, labelPixelSize = 1.5, labelCorner = 'bl';
+$('togLabels').addEventListener('click', () => {
+  labelsEnabled = !labelsEnabled;
+  $('togLabels').classList.toggle('on', labelsEnabled);
+  $('labelCtls').style.display = labelsEnabled ? '' : 'none';
+});
+[['lblSzS',1.0],['lblSzM',1.5],['lblSzL',2.0]].forEach(([id,sz]) =>
+  $(id).addEventListener('click', () => {
+    labelPixelSize = sz;
+    ['lblSzS','lblSzM','lblSzL'].forEach(b => $(b).classList.remove('on'));
+    $(id).classList.add('on');
+  }));
+['lblTL','lblTR','lblBL','lblBR'].forEach(id =>
+  $(id).addEventListener('click', () => {
+    labelCorner = id.slice(3).toLowerCase();
+    ['lblTL','lblTR','lblBL','lblBR'].forEach(b => $(b).classList.remove('on'));
+    $(id).classList.add('on');
+  }));
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+const dropZone = $('dropZone'), fileInput = $('fileInput');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadFile(f);
+});
+fileInput.addEventListener('change', () => fileInput.files[0] && loadFile(fileInput.files[0]));
+$('togInvert').addEventListener('click', () => {
+  inverted = !inverted;
+  $('togInvert').classList.toggle('on', inverted);
+  scheduleRebuild();
+});
+function loadFile(file) {
+  setStatus('Loading…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      srcImg = img; maskData = null;
+      syncMotifH();               // the motif's height follows the new image's aspect
+      syncOffsetRange();          // and so does the vertical travel
+      btnProcess.disabled = false; btnExport.disabled = true;
+      setStatus('Image loaded — press “Preview mask” to wrap it round the building', 'ok');
+      switchTab('pattern');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab =>
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+function switchTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === t));
+  $('subtabs').style.display = (t === 'pattern') ? 'none' : '';
+  rerender();
+}
+const rerender = () => renderTab();
+
+// ── Working mask over the whole development strip ─────────────────────────────
+function maskDims() {
+  const ppc = parseFloat($('sRes').value);      // px per 100 mm
+  let W = Math.max(48, Math.round(STRIP.w / 100 * ppc));
+  let H = Math.max(48, Math.round(STRIP.h / 100 * ppc));
+  const MAXPX = 7e6, clamped = W * H > MAXPX;
+  if (clamped) { const k = Math.sqrt(MAXPX / (W * H)); W = Math.round(W*k); H = Math.round(H*k); }
+  return { W, H, clamped };
+}
+
+// Paint the source image across the strip: repeated at a real motif size, or
+// stretched once. Repeats run left to right across the unrolled elevations, so
+// a motif that meets a corner simply carries on onto the next wall.
+// The pattern field can also be slid over the building. The offset moves only
+// the image; the panel grid, the coursing and the door all stay put. Sideways
+// the field wraps, because the unrolled elevations are one closed loop — slide
+// far enough and the motif simply travels round the corner and back.
+const wrapMod = (a, n) => ((a % n) + n) % n;
+const getOffX = () => { const e = $('sOffX'); return e ? parseFloat(e.value) || 0 : 0; };
+const getOffY = () => { const e = $('sOffY'); return e ? parseFloat(e.value) || 0 : 0; };
+const getZoom = () => { const e = $('sZoom'); return e ? Math.max(0.05, (parseFloat(e.value) || 100) / 100) : 1; };
+const imgAR   = () => (srcImg && srcImg.width) ? srcImg.height / srcImg.width : 1;
+
+// Motif height in millimetres of wall — the figure the height slider shows and
+// the one the slide range is measured against.
+function motifHmm() {
+  if (fitMode !== 'tile') return STRIP.h * getZoom();
+  return aspectLock ? Math.max(20, parseFloat($('sMotif').value)) * imgAR()
+                    : Math.max(20, parseFloat($('sMotifH').value));
+}
+
+function paintSource(ctx, W, H) {
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  const blurR = parseInt($('sBlur').value);
+  ctx.filter = (blurR > 0 ? `blur(${blurR}px) ` : '') + 'grayscale(1)';
+
+  let tw, th;
+  if (fitMode === 'stretch') {
+    const z = getZoom();
+    tw = Math.max(4, W * z); th = Math.max(4, H * z);
+  } else {
+    const motif = Math.max(20, parseFloat($('sMotif').value));
+    tw = Math.max(4, motif / STRIP.w * W);
+    // Linked, the height follows the image's own proportions exactly — the mask
+    // has square pixels, so this is just the width times the aspect. Released,
+    // it is whatever the second slider says, in millimetres of wall.
+    th = aspectLock ? Math.max(4, tw * imgAR())
+                    : Math.max(4, Math.max(20, parseFloat($('sMotifH').value)) / STRIP.h * H);
+  }
+
+  // mm → px. +X slides right around the building, +Y slides up the wall.
+  const ox =  getOffX() / STRIP.w * W;
+  const oy = -getOffY() / STRIP.h * H;
+
+  // Tiles are anchored to the foot of the strip, as before, then offset and
+  // wrapped so no slide can ever leave bare wall.
+  let sx = wrapMod(ox, tw);            if (sx > 0) sx -= tw;
+  let sy = wrapMod((H - th) + oy, th); if (sy > 0) sy -= th;
+
+  for (let y = sy; y < H; y += th)
+    for (let x = sx; x < W; x += tw)
+      ctx.drawImage(srcImg, x, y, tw, th);
+
+  ctx.filter = 'none';
+}
+
+// One pass answers "is this pixel on a real surface?" for the whole strip;
+// everything downstream reads the map instead of re-testing the geometry.
+// 0 = off the building · 1 = wall material · 2 = the door leaf
+let insideMap = null;
+function buildInsideMap(W, H) {
+  const m = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) {
+    const ny = (y + 0.5) / H;
+    for (let x = 0; x < W; x++) {
+      const nx = (x + 0.5) / W;
+      if (!isInsideStrip(nx, ny)) continue;
+      m[y*W+x] = isInsideStrip(nx, ny, 'door') ? 2 : 1;
+    }
+  }
+  return m;
+}
+function applyStripClip(binary, W, H) {
+  insideMap = buildInsideMap(W, H);
+  for (let i = 0; i < W * H; i++) if (!insideMap[i]) binary[i] = 0;
+}
+const countFilled = (b, n) => Math.round(b.reduce((s,v) => s + (v?1:0), 0) / n * 100);
+
+function buildMaskCanvas() {
+  maskCanvas = document.createElement('canvas');
+  maskCanvas.width = maskW; maskCanvas.height = maskH;
+  const c = maskCanvas.getContext('2d');
+  const id = c.createImageData(maskW, maskH);
+  const LV = Math.max(1, parseInt($('sLevels').value));
+  for (let i = 0; i < maskW * maskH; i++) {
+    const v = maskData[i], t = v / LV;
+    if (v) {                                   // lace: pale, taller relief reads warmer
+      id.data[i*4]   = Math.round(247 - 60 * t);
+      id.data[i*4+1] = Math.round(243 - 66 * t);
+      id.data[i*4+2] = Math.round(230 - 72 * t);
+      id.data[i*4+3] = 255;
+    } else {                                   // open ground behind the lace
+      id.data[i*4] = 122; id.data[i*4+1] = 117; id.data[i*4+2] = 110; id.data[i*4+3] = 255;
+    }
+  }
+  c.putImageData(id, 0, 0);
+}
+
+let maskGen = 0;
+let hasBuilt = false, rebuildTimer = 0;
+function scheduleRebuild() {
+  if (!hasBuilt) { updateResHint(); return; }
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(() => { buildMask(true); }, 260);
+}
+
+function buildMask(quiet) {
+  const d = maskDims(), cW = d.W, cH = d.H;
+  let binary;
+
+  if (srcMode === 'upload') {
+    if (!srcImg) return false;
+    const cv = document.createElement('canvas');
+    cv.width = cW; cv.height = cH;
+    const ctx = cv.getContext('2d');
+    paintSource(ctx, cW, cH);
+    const raw = ctx.getImageData(0, 0, cW, cH).data;
+    const thresh = parseInt($('sThresh').value) / 255;
+    const LV = Math.max(1, parseInt($('sLevels').value));
+    binary = new Uint8Array(cW * cH);
+    for (let i = 0; i < cW * cH; i++) {
+      let g = (raw[i*4]*0.299 + raw[i*4+1]*0.587 + raw[i*4+2]*0.114) / 255;
+      if (inverted) g = 1 - g;
+      if (g >= thresh) continue;
+      binary[i] = Math.min(LV, 1 + Math.floor((1 - g/thresh) * LV));
+    }
+    const dil = parseInt($('sDilate').value);
+    if (dil > 0) binary = dilateMask(binary, cW, cH, dil);
+  } else {
+    genCanvas = generateStrip(cW, cH, {
+      trunks: parseInt($('sTrunks').value),
+      spread: parseFloat($('sSpread').value),
+      taper : parseFloat($('sTaper').value),
+      weight: parseFloat($('sWeight').value),
+      seed  : parseInt($('sSeed').value),
+    });
+    const raw = genCanvas.getContext('2d').getImageData(0, 0, cW, cH).data;
+    const LV = Math.max(1, parseInt($('sLevels').value));
+    binary = new Uint8Array(cW * cH);
+    for (let i = 0; i < cW * cH; i++) binary[i] = raw[i*4] > 60 ? LV : 0;
+  }
+
+  applyStripClip(binary, cW, cH);
+  maskW = cW; maskH = cH; maskData = binary;
+  maskSig = cW + 'x' + cH + '#' + (++maskGen);
+  buildMaskCanvas();
+  hasBuilt = true;
+
+  btnExport.disabled = false;
+  $('btnAssemblyMap').disabled = false;
+  btnExportSurf.disabled = (activeSurf === 'all');
+  updateExportInfo(); updatePanelInfo(); updateResHint();
+  clearSelection();
+  if (!quiet) {
+    const pct = countFilled(binary, cW * cH);
+    setStatus(`Mask ready — ${pct}% solid across ${SURF.length} surfaces · strip ${Math.round(STRIP.w)}×${Math.round(STRIP.h)} mm`, 'ok');
+  }
+  rerender();
+  return true;
+}
+
+function dilateMask(src, W, H, r) {
+  const out = new Uint8Array(W * H), r2 = r * r;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      let mx = 0;
+      for (let dy = -r; dy <= r; dy++)
+        for (let dx = -r; dx <= r; dx++) {
+          if (dx*dx + dy*dy > r2) continue;
+          const nx = x+dx, ny = y+dy;
+          if (nx>=0 && ny>=0 && nx<W && ny<H) { const v = src[ny*W+nx]; if (v > mx) mx = v; }
+        }
+      out[y*W+x] = mx;
+    }
+  return out;
+}
+
+btnProcess.addEventListener('click', () => {
+  if (!srcImg) return;
+  setStatus('Wrapping the pattern round the building…');
+  setTimeout(() => {
+    try { if (buildMask(false)) switchTab('elev'); }
+    catch (e) { setStatus('Error: ' + e.message, 'err'); console.error(e); }
+  }, 10);
+});
+$('btnGenerate').addEventListener('click', () => {
+  setStatus('Growing lace over every surface…');
+  setTimeout(() => {
+    try { buildMask(false); switchTab('elev'); }
+    catch (e) { setStatus('Generation error: ' + e.message, 'err'); console.error(e); }
+  }, 10);
+});
+
+// ── Branching generator, seeded surface by surface ────────────────────────────
+// Each surface gets trunks rising from its own base, scattered mid-level fill,
+// and — for a gable or an arch — seeds from the apex that fill the head.
+// Branches are free to run past a surface edge; the strip clip trims them.
+function generateStrip(W, H, params) {
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#fff'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const rng = seedRng(params.seed);
+  const spreadR = params.spread * Math.PI / 180;
+  const kx = W / STRIP.w, ky = H / STRIP.h;
+
+  // Strand count is capped and shared out by surface area, so a large building
+  // stays as quick to draw as a single wall — it just spreads the same ink further.
+  const TOTAL_BUDGET = Math.min(5e6, Math.max(8e5, W * H * 2));
+  const areaAll = SURF.reduce((a,s) => a + s.w*s.h, 0) || 1;
+
+  for (const s of SURF) {
+    const x0 = s.x0 * kx, y0 = s.y0 * ky, w = s.w * kx, h = s.h * ky;
+    if (w < 4 || h < 4) continue;
+    const surfBudget = Math.max(1.2e5, TOTAL_BUDGET * (s.w*s.h) / areaAll);
+    const firstLen = h * (1 - params.taper) * 1.05;
+    const maxLen   = firstLen;
+    const minSpread = Math.max(1, 2 * firstLen * Math.sin(spreadR / 2));
+    const nT = Math.min(22, Math.max(params.trunks, Math.ceil(w / minSpread * params.trunks * 0.35)));
+
+    // Collect every seed first, so the surface's ink is shared out evenly.
+    // Depth-first recursion with a running budget would spend the whole
+    // allowance on the first tree and leave the rest of the wall bare.
+    const seeds = [];
+    for (let i = 0; i < nT; i++) {
+      const bx = x0 + w * ((i + 0.5 + (rng()-0.5)*0.45) / nT);
+      const by = y0 + h;
+      const ang = -Math.PI/2 + (rng()-0.5)*0.18;
+      const nFork = rng() < 0.4 ? 3 : 2;
+      for (let b = 0; b < nFork; b++) {
+        const frac = nFork === 2 ? (b - 0.5) : (b/(nFork-1) - 0.5);
+        seeds.push([bx, by, ang + frac*spreadR*0.7 + (rng()-0.5)*0.1, firstLen, 1, maxLen]);
+      }
+    }
+    const fillLen = firstLen * 0.28;
+    for (let i = 0; i < nT * 2; i++)
+      seeds.push([x0 + rng()*w, y0 + h*(rng()*0.88 + 0.04),
+                  -Math.PI/2 + (rng()-0.5)*0.9, fillLen*(0.5 + rng()*0.8), 4, maxLen]);
+
+    if (s.shape !== 'rect' && s.gable > 0) {
+      const shoulderY = s.gable / s.h * h;
+      const apexLen = firstLen * 0.55;
+      const forks = Math.max(3, Math.round(params.trunks * 0.4));
+      for (let b = 0; b < forks; b++) {
+        const frac = (b / (forks - 1)) - 0.5;
+        seeds.push([x0 + w/2, y0, Math.PI/2 + frac*spreadR*1.2 + (rng()-0.5)*0.15, apexLen, 1, apexLen]);
+      }
+      for (let i = 0; i < Math.round(nT * 1.6); i++) {
+        const gy = rng() * shoulderY * 0.9;
+        const t = shoulderY > 0 ? gy / shoulderY : 1;
+        const hw = 0.5 * t * w;
+        seeds.push([x0 + w*0.5 - hw + rng()*(2*hw), y0 + gy,
+                    Math.PI/2 + (rng()-0.5)*spreadR*1.5, apexLen*(0.3 + rng()*0.5), 3, apexLen]);
+      }
+    }
+
+    const perSeed = Math.max(600, surfBudget / Math.max(1, seeds.length));
+    const p2 = Object.assign({}, params, {
+      maxDepth: Math.max(7, Math.min(17, Math.floor(Math.log(perSeed) / Math.log(2.15))))
+    });
+    for (const [sx, sy, ang, len, depth, ml] of seeds) {
+      branchBudget = perSeed * 3;          // safety net, not the shaping limit
+      drawBranch(ctx, rng, sx, sy, ang, len, depth, h, ml, p2);
+    }
+  }
+  return canvas;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderTab() {
+  cvwrap.innerHTML = '';
+  if (activeTab === 'pattern')      drawSourceTab();
+  else if (activeTab === 'elev')    drawElevations();
+  else                              draw3DBuilding();
+}
+function showEmpty(msg) {
+  cvwrap.innerHTML = `<div class="empty"><div class="ico">🏚</div><div>${msg}</div></div>`;
+}
+function drawSourceTab() {
+  const src = srcMode === 'upload' ? srcImg : genCanvas;
+  if (!src) { showEmpty(srcMode === 'upload'
+      ? 'Upload a lace image using the panel on the left'
+      : 'Click “Generate pattern” to grow lace over every surface'); return; }
+  const MAX = 520, sc = Math.min(1, MAX / Math.max(src.width, src.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(src.width * sc); c.height = Math.round(src.height * sc);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  cvwrap.appendChild(c);
+}
+
+// Elevations: the unrolled strip, or one surface on its own
+function viewRect() {
+  if (activeSurf === 'all') return { x0:0, y0:0, w:STRIP.w, h:STRIP.h };
+  const s = surfOrPiece(activeSurf);
+  return s ? { x0:s.x0, y0:s.y0, w:s.w, h:s.h } : { x0:0, y0:0, w:STRIP.w, h:STRIP.h };
+}
+function visibleSurfaces() {
+  const all = allSurfaces();
+  return activeSurf === 'all' ? all : all.filter(s => s.code === activeSurf);
+}
+
+function drawElevations() {
+  const R = viewRect();
+  const MAX_H = 430, MAX_W = Math.max(320, cvwrap.clientWidth - 28 || 620);
+  let W, H;
+  const asp = R.h / R.w;
+  if (asp > MAX_H / MAX_W) { H = MAX_H; W = Math.round(H / asp); }
+  else                     { W = MAX_W; H = Math.round(W * asp); }
+  W = Math.max(W, 80); H = Math.max(H, 60);
+
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const X = mx => (mx - R.x0) / R.w * W;
+  const Y = my => (my - R.y0) / R.h * H;
+
+  ctx.fillStyle = '#d4cfc8'; ctx.fillRect(0, 0, W, H);
+
+  const surfs = visibleSurfaces();
+  const pathOf = s => {
+    const pts = surfOutline(s);
+    ctx.moveTo(X(pts[0][0]), Y(pts[0][1]));
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(X(pts[i][0]), Y(pts[i][1]));
+    ctx.closePath();
+  };
+
+  if (maskData && maskCanvas) {
+    ctx.save();
+    ctx.beginPath(); surfs.forEach(pathOf); ctx.clip();
+    const kx = maskW / STRIP.w, ky = maskH / STRIP.h;
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(maskCanvas, R.x0*kx, R.y0*ky, R.w*kx, R.h*ky, 0, 0, W, H);
+    ctx.restore();
+  } else {
+    surfs.forEach(s => {
+      ctx.save(); ctx.beginPath(); pathOf(s);
+      ctx.fillStyle = '#e8e3db'; ctx.fill(); ctx.restore();
+    });
+    ctx.fillStyle = 'rgba(90,80,70,0.5)';
+    ctx.font = '13px system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Generate or upload a pattern', W/2, H*0.6);
+    ctx.textAlign = 'left';
+  }
+
+  drawPanelGrid(ctx, X, Y, surfs);
+
+  // The door reads as a cut line through the pattern, not a blackout —
+  // the lace runs on across it and lifts out with the leaf.
+  const dS = doorSurfaceDesc();
+  if (dS && surfs.some(s => s.code === dS.host || s.code === 'D')) {
+    const x = X(dS.x0), y = Y(dS.y0), w = X(dS.x0+dS.w) - x, h = Y(dS.y0+dS.h) - y;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(250,247,242,0.85)'; ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = dS.tint; ctx.lineWidth = 1.6;
+    ctx.setLineDash([7, 4]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+    ctx.restore();
+    if (w > 42 && activeSurf !== 'D') {
+      ctx.font = '600 10px system-ui,sans-serif'; ctx.textAlign = 'center';
+      chipAt('DOOR LEAF', x + w/2, y + 11, dS.tint, ctx);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // Surface outlines and names
+  surfs.forEach(s => {
+    ctx.save(); ctx.beginPath(); pathOf(s);
+    ctx.strokeStyle = s.tint; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+  });
+  const chip = (text, cx, cy, colour) => chipAt(text, cx, cy, colour, ctx);
+  if (activeSurf === 'all') {
+    ctx.font = '600 10px system-ui,sans-serif'; ctx.textAlign = 'center';
+    surfs.forEach(s => {
+      const label = s.name.toUpperCase();
+      const tw = ctx.measureText(label).width;
+      if (X(s.x0+s.w) - X(s.x0) < tw + 14) return;
+      chip(label, X(s.x0 + s.w/2), Math.max(12, Y(s.y0) + 9), s.tint);
+    });
+    ctx.textAlign = 'left';
+  }
+
+  // Ground line
+  ctx.strokeStyle = 'rgba(45,90,61,0.55)'; ctx.lineWidth = 1.5;
+  ctx.setLineDash([6,4]);
+  const gy = Y(STRIP.h);
+  ctx.beginPath(); ctx.moveTo(0, gy - 0.5); ctx.lineTo(W, gy - 0.5); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const L = getTileLayout();
+  const nHere = surfs.reduce((n,s) => n + L.bySurf[s.code].length, 0);
+  ctx.font = '600 11px system-ui,sans-serif'; ctx.textAlign = 'center';
+  const readout = `${Math.round(R.w)} × ${Math.round(R.h)} mm  ·  ${nHere} panels`;
+  chip(readout, ctx.measureText(readout).width/2 + 12, H - 12, '#2d5a3d');
+  ctx.textAlign = 'left';
+
+  cv.style.cursor = 'crosshair';
+  cv.addEventListener('click', e => {
+    if (!maskData) return;
+    const rect = cv.getBoundingClientRect();
+    const mx = R.x0 + (e.clientX - rect.left) / rect.width  * R.w;
+    const my = R.y0 + (e.clientY - rect.top)  / rect.height * R.h;
+    const codes = new Set(surfs.map(s => s.code));
+    const under = L.tiles.filter(t => codes.has(t.surf) &&
+      mx >= t.x0 && mx < t.x0 + t.w && my >= t.y0 && my < t.y0 + t.h);
+    // the leaf sits on top of its wall, so a click in the opening picks the leaf
+    const hit = under.find(t => t.piece === 'door') || under[0];
+    if (!hit) return;
+    selectedPanel = { surf:hit.surf, row:hit.row, col:hit.col };
+    btnExportOne.disabled = false;
+    const s = surfOrPiece(hit.surf);
+    $('selDisplay').innerHTML =
+      `<span style="color:var(--accent);font-weight:600">${tileLabel(hit)}</span> ` +
+      `<span style="color:var(--muted)">· ${s.name} · ${Math.round(hit.w)}×${Math.round(hit.h)}mm</span>`;
+    rerender();
+  });
+  cvwrap.appendChild(cv);
+}
+
+// A light backing so names and readouts stay legible over the lace
+function chipAt(text, cx, cy, colour, ctx) {
+  const tw = ctx.measureText(text).width;
+  ctx.fillStyle = 'rgba(247,245,242,0.88)';
+  roundRect(ctx, cx - tw/2 - 6, cy - 8, tw + 12, 15, 4); ctx.fill();
+  ctx.fillStyle = colour; ctx.fillText(text, cx, cy + 3);
+  return tw;
+}
+
+function drawPanelGrid(ctx, X, Y, surfs) {
+  const L = getTileLayout();
+  ctx.save();
+  for (const s of surfs) {
+    for (const t of (L.bySurf[s.code] || [])) {
+      const x = X(t.x0), y = Y(t.y0), w = X(t.x0+t.w) - x, h = Y(t.y0+t.h) - y;
+      const sel = selectedPanel && selectedPanel.surf === t.surf
+               && selectedPanel.row === t.row && selectedPanel.col === t.col;
+      if (sel) {
+        ctx.fillStyle = 'rgba(45,90,61,0.32)'; ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#2d5a3d'; ctx.lineWidth = 2; ctx.setLineDash([]);
+        ctx.strokeRect(x+1, y+1, w-2, h-2);
+        if (w > 30 && h > 14) {
+          ctx.fillStyle = '#1a3d28'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center';
+          ctx.fillText(tileLabel(t), x + w/2, y + h/2 + 4); ctx.textAlign = 'left';
+        }
+      }
+    }
+  }
+  ctx.lineWidth = 0.8; ctx.setLineDash([3,4]);
+  for (const s of surfs) {
+    ctx.strokeStyle = s.kind === 'door' ? 'rgba(138,90,46,0.85)' : 'rgba(45,90,61,0.40)';
+    for (const t of (L.bySurf[s.code] || []))
+      ctx.strokeRect(X(t.x0), Y(t.y0), X(t.x0+t.w)-X(t.x0), Y(t.y0+t.h)-Y(t.y0));
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+// ── 3D building ───────────────────────────────────────────────────────────────
+// Parallel (axonometric) projection, so a flat surface maps to the screen by an
+// exact affine transform — which is what lets each elevation's slice of the
+// pattern be painted straight onto its face.
+const V3 = { az: -0.72, el: 0.42 };
+const v3add = (a,b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
+const v3mul = (a,k) => [a[0]*k, a[1]*k, a[2]*k];
+const v3sub = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+const v3dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const v3cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const v3norm = a => { const l = Math.hypot(a[0],a[1],a[2])||1; return [a[0]/l,a[1]/l,a[2]/l]; };
+
+function frames3D() {
+  const f = {};
+  if (mode === 'wall') {
+    const s = SURF[0];
+    f.W = { o:[0,0,0], ex:[1,0,0], ey:[0,0,1] };
+    return f;
+  }
+  const W=getBW(), D=getBD(), EH=getEH(), RR=getRR(), SL=Math.hypot(W/2,RR);
+  f.F = { o:[0,0,0], ex:[1,0,0],  ey:[0,0,1] };
+  f.R = { o:[W,0,0], ex:[0,1,0],  ey:[0,0,1] };
+  f.B = { o:[W,D,0], ex:[-1,0,0], ey:[0,0,1] };
+  f.L = { o:[0,D,0], ex:[0,-1,0], ey:[0,0,1] };
+  f.RS = { o:[W,0,EH], ex:[0,1,0],  ey:[-(W/2)/SL, 0, RR/SL] };
+  f.LS = { o:[0,D,EH], ex:[0,-1,0], ey:[ (W/2)/SL, 0, RR/SL] };
+  return f;
+}
+// Roof planes always exist geometrically, even when they are not clad
+function roofQuads() {
+  if (mode === 'wall') return [];
+  const W=getBW(), D=getBD(), EH=getEH(), RR=getRR();
+  return [
+    { pts:[[W,0,EH],[W,D,EH],[W/2,D,EH+RR],[W/2,0,EH+RR]], n:v3norm([RR,0,W/2]) },
+    { pts:[[0,D,EH],[0,0,EH],[W/2,0,EH+RR],[W/2,D,EH+RR]], n:v3norm([-RR,0,W/2]) }
+  ];
+}
+
+function draw3DBuilding() {
+  const CW = Math.max(360, Math.min(760, cvwrap.clientWidth - 28 || 620)), CH = 440;
+  const cv = document.createElement('canvas');
+  cv.width = CW; cv.height = CH;
+  cvwrap.appendChild(cv);
+  const ctx = cv.getContext('2d');
+
+  const F = frames3D();
+  const paint = () => {
+    const ce = Math.cos(V3.el), se = Math.sin(V3.el);
+    const fwd = v3norm([-ce*Math.cos(V3.az), -ce*Math.sin(V3.az), -se]);
+    const right = v3norm(v3cross(fwd, [0,0,1]));
+    const up = v3cross(right, fwd);
+
+    // Gather every face: its outline in 3D, outward normal, and texture slice
+    const faces = [];
+    for (const s of SURF) {
+      const fr = F[s.code]; if (!fr) continue;
+      const outline = surfOutlineLocal(s).map(([lx,ly]) =>
+        v3add(fr.o, v3add(v3mul(fr.ex, lx), v3mul(fr.ey, ly))));
+      faces.push({ s, fr, outline, n: v3norm(v3cross(fr.ex, fr.ey)) });
+    }
+    if (mode === 'shed' && !cladRoof)
+      roofQuads().forEach(q => faces.push({ plain:'#7d7264', outline:q.pts, n:q.n }));
+
+    // Fit
+    const all = [];
+    faces.forEach(f => f.outline.forEach(p => all.push(p)));
+    if (mode === 'shed') roofQuads().forEach(q => q.pts.forEach(p => all.push(p)));
+    let cx=0, cy=0, cz=0;
+    all.forEach(p => { cx+=p[0]/all.length; cy+=p[1]/all.length; cz+=p[2]/all.length; });
+    const ctr = [cx,cy,cz];
+    let ext = 1;
+    all.forEach(p => {
+      const d = v3sub(p, ctr);
+      ext = Math.max(ext, Math.abs(v3dot(d,right)) / (CW*0.42), Math.abs(v3dot(d,up)) / (CH*0.40));
+    });
+    const S = 1 / ext;
+    const proj = p => { const d = v3sub(p, ctr);
+      return { x: CW/2 + v3dot(d,right)*S, y: CH*0.54 - v3dot(d,up)*S, z: v3dot(d,fwd) }; };
+
+    ctx.fillStyle = '#edeae5'; ctx.fillRect(0, 0, CW, CH);
+
+    // Ground shadow
+    if (mode === 'shed') {
+      const W=getBW(), D=getBD();
+      const g = [[0,0,0],[W,0,0],[W,D,0],[0,D,0]].map(proj);
+      ctx.fillStyle = 'rgba(80,74,64,0.16)';
+      ctx.beginPath(); g.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+      ctx.closePath(); ctx.fill();
+    }
+
+    const vis = faces.filter(f => v3dot(f.n, fwd) < -1e-6);
+    vis.forEach(f => {
+      const pts = f.outline.map(proj);
+      f._pts = pts;
+      f._z = pts.reduce((a,p) => a + p.z, 0) / pts.length;
+    });
+    vis.sort((a,b) => b._z - a._z);
+
+    const shadeOf = f => { const l = Math.max(0.35, Math.min(1, 0.45 + 0.55 * v3dot(f.n, v3norm([-0.4,-0.5,0.75])))); return l; };
+
+    for (const f of vis) {
+      const pts = f._pts;
+      ctx.save();
+      ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath();
+      ctx.clip();
+      if (f.plain || !maskCanvas) {
+        const base = f.plain || (f.s ? f.s.tint : '#7d7264');
+        ctx.fillStyle = base; ctx.globalAlpha = f.plain ? 1 : 0.55;
+        ctx.fill(); ctx.globalAlpha = 1;
+      } else {
+        const s = f.s, fr = f.fr;
+        const kx = maskW / STRIP.w, ky = maskH / STRIP.h;
+        const sx = s.x0*kx, sy = s.y0*ky, sw = Math.max(1, s.w*kx), sh = Math.max(1, s.h*ky);
+        const p0 = proj(v3add(fr.o, v3mul(fr.ey, s.h)));                              // texture top-left
+        const p1 = proj(v3add(v3add(fr.o, v3mul(fr.ex, s.w)), v3mul(fr.ey, s.h)));    // top-right
+        const p3 = proj(fr.o);                                                        // bottom-left
+        ctx.save();
+        ctx.transform((p1.x-p0.x)/sw, (p1.y-p0.y)/sw, (p3.x-p0.x)/sh, (p3.y-p0.y)/sh, p0.x, p0.y);
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(maskCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+        ctx.restore();
+      }
+      // shade the whole face
+      ctx.fillStyle = 'rgba(20,16,10,' + (0.42 * (1 - shadeOf(f))).toFixed(3) + ')';
+      ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(40,34,26,0.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.stroke();
+    }
+
+    // The door is clad in the same run of lace, so it shows as a reveal line
+    // cut through the pattern rather than a hole in it.
+    if (doorOn) {
+      const s = surfByCode(doorSurf), fr = s && F[s.code];
+      const face = vis.find(v => v.s === s);
+      if (fr && face) {
+        const d = doorRect();
+        const q = [[d.x,0],[d.x+d.w,0],[d.x+d.w,d.h],[d.x,d.h]]
+          .map(([lx,ly]) => proj(v3add(fr.o, v3add(v3mul(fr.ex,lx), v3mul(fr.ey,ly)))));
+        const path = () => { ctx.beginPath();
+          q.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath(); };
+        ctx.save();
+        path(); ctx.strokeStyle = 'rgba(255,250,242,0.55)'; ctx.lineWidth = 3; ctx.stroke();
+        path(); ctx.strokeStyle = 'rgba(48,34,20,0.85)'; ctx.lineWidth = 1.3; ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    ctx.fillStyle = 'rgba(60,50,40,0.6)';
+    ctx.font = '500 11px system-ui,sans-serif';
+    ctx.fillText(mode === 'shed'
+      ? `${Math.round(getBW())} × ${Math.round(getBD())} mm · eave ${Math.round(getEH())} · ridge ${Math.round(getEH()+getRR())} mm — drag to turn`
+      : 'Single wall — drag to turn', 12, CH - 12);
+  };
+
+  let drag = null;
+  cv.style.cursor = 'grab';
+  cv.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY}; cv.setPointerCapture(e.pointerId); cv.style.cursor='grabbing'; });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    V3.az -= (e.clientX - drag.x) * 0.008;
+    V3.el = Math.max(-0.2, Math.min(1.35, V3.el + (e.clientY - drag.y) * 0.006));
+    drag = {x:e.clientX, y:e.clientY};
+    paint();
+  });
+  const stop = () => { drag = null; cv.style.cursor='grab'; };
+  cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+  paint();
+}
+
+// ── Info readouts ─────────────────────────────────────────────────────────────
+function setStatus(msg, type) {
+  sbar.className = 'sbar' + (type ? ' ' + type : '');
+  sbar.innerHTML = `<span class="dot"></span><span>${msg}</span>`;
+}
+function updateExportInfo() {
+  const pmm = getPanelMM();
+  $('exportInfo').textContent =
+    `STL panels in mm · up to ${Math.round(pmm)}×${Math.round(pmm)}mm (≈${(pmm/25.4).toFixed(1)}″)`
+    + ` · open in PrusaSlicer, Cura or Bambu Studio`;
+}
+function updatePanelInfo() {
+  if (!maskData) return;
+  const L = getTileLayout();
+  const el = $('panelInfo');
+  el.style.display = '';
+  let total = 0, print = 0, partial = 0;
+  const per = allSurfaces().map(s => {
+    let p = 0;
+    for (const t of (L.bySurf[s.code] || [])) {
+      total++;
+      if (tilePrintable(t)) { p++; print++; if (tileFacadeFrac(t) < 0.995) partial++; }
+    }
+    return `${s.tag || 'Wall'} ${p}`;
+  });
+  let txt = `${print} panels to print of ${total} tiles`;
+  if (partial) txt += ` · ${partial} cut to a profile or the door`;
+  txt += ` · ${per.join(' · ')}`;
+  if (L.frac > 0) txt += ` · ${L.dir === 'rows' ? 'rows' : 'columns'} offset ${Math.round(L.frac*100)}%`;
+  el.textContent = txt;
+  updateDoorWarning();
+  updateRepeatInfo(false);
+  const warn = $('bigWarn');
+  if (print > 40) {
+    warn.style.display = '';
+    warn.textContent = `“Export all” packs ${print} panels into a single zip, foldered by surface, with a `
+      + `panel_list.csv alongside them. It is one download, but building it takes a few minutes and the archive `
+      + `will be large — “one of each identical panel” is far smaller if the pattern repeats.`;
+  } else warn.style.display = 'none';
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+const tick = () => new Promise(r => setTimeout(r, 0));
+const extH  = () => parseFloat($('sHeight').value);
+const baseH = () => parseFloat($('sBase').value);
+
+// One STL per distinct panel, named with how many of it the building needs.
+async function exportUniquePanels() {
+  if (!maskData) return;
+  const g = panelGroups();
+  const reps = g.types.map(t => t.rep || t.members[0]);
+  await exportTiles(reps, `${g.unique} distinct panels`, g);
+}
+
+async function exportTiles(tiles, what, groups) {
+  if (!maskData) return;
+  btnExport.disabled = btnExportSurf.disabled = btnExportOne.disabled = true;
+  $('btnExportUniq').disabled = true;
+  pwrap.classList.add('show');
+  let done = 0, skipped = 0, n = 0, rawBytes = 0;
+  const zip = new ZipBuilder();
+  const manifest = [];
+  const t0 = Date.now();
+  try {
+    for (const t of tiles) {
+      n++;
+      pbar.style.width = Math.round(n / tiles.length * 100) + '%';
+      const { px0, py0, pw, ph } = tilePixels(t);
+      if (pw <= 0 || ph <= 0 || !tilePrintable(t)) { skipped++; continue; }
+      const zipMB = (zip.offset / 1048576).toFixed(0);
+      plabel.textContent = `Panel ${n}/${tiles.length} — ${tileLabel(t)} · ${zipMB} MB packed`;
+      await tick();
+      const buf = buildPanelSTL(px0, py0, pw, ph, t.w, t.h, extH(), baseH(), tileLabel(t), t.piece);
+      const u8 = new Uint8Array(buf);
+      // A binary STL is 80 bytes of header, a uint32 triangle count, then 50
+      // bytes each. Anything claiming zero triangles is an empty solid and has
+      // no business in a print queue.
+      if (u8.length < 84 || new DataView(buf).getUint32(80, true) === 0) { skipped++; continue; }
+      rawBytes += u8.length;
+
+      let path, note = '';
+      if (groups) {
+        // One of each: the archive is a parts list, so the file name carries the
+        // type and how many of it the building needs.
+        const code = groups.byId.get(t.surf + ':' + t.row + ':' + t.col);
+        const type = groups.types.find(g => g.code === code);
+        path = type
+          ? `wallweaver_panels/TYPE-${code}_x${type.count}_${zipSafe(tileLabel(t))}.stl`
+          : `wallweaver_panels/${zipSafe(tileLabel(t))}.stl`;
+        note = type ? `${type.count}` : '1';
+      } else {
+        // Everything: foldered by surface so the archive unpacks the way the
+        // building is put together.
+        const s = surfOrPiece(t.surf);
+        path = `wallweaver_panels/${zipSafe(s ? s.name : t.surf)}/${zipSafe(tileLabel(t))}.stl`;
+        note = '1';
+      }
+      await zip.add(path, u8);
+      manifest.push(`${tileLabel(t)},${path.split('/').pop()},${note},`
+        + `${Math.round(t.w*10)/10},${Math.round(t.h*10)/10}`);
+      done++;
+    }
+
+    if (!done) { setStatus('Nothing to export — no printable panels in that selection', 'err'); }
+    else {
+      plabel.textContent = 'Writing the archive…';
+      await tick();
+      const head = groups
+        ? 'panel,file,quantity_needed,width_mm,height_mm'
+        : 'panel,file,quantity,width_mm,height_mm';
+      await zip.add('wallweaver_panels/panel_list.csv',
+        new TextEncoder().encode(head + '\n' + manifest.join('\n') + '\n'));
+      const blob = zip.finish();
+      const mb = (blob.size / 1048576).toFixed(1), raw = (rawBytes / 1048576).toFixed(0);
+      const saved = rawBytes ? Math.round((1 - blob.size / rawBytes) * 100) : 0;
+      const stamp = new Date().toISOString().slice(0, 10);
+      triggerDownload(blob, `wallweaver_${zipSafe(what).replace(/ /g,'-')}_${done}panels_${stamp}.zip`);
+      setStatus(`Done — ${done} panels from ${what} in one zip · ${mb} MB `
+        + `(${raw} MB of STL, ${saved}% smaller) · ${skipped} tiles skipped — off the building or no lace in them `
+        + `· ${Math.round((Date.now()-t0)/1000)}s`, 'ok');
+    }
+  } catch (e) {
+    setStatus('Export stopped — ' + e.message, 'err'); console.error(e);
+  }
+  pwrap.classList.remove('show');
+  btnExport.disabled = false;
+  btnExportSurf.disabled = (activeSurf === 'all');
+  btnExportOne.disabled = !selectedPanel;
+  $('btnExportUniq').disabled = !maskData;
+}
+$('btnExportUniq').addEventListener('click', exportUniquePanels);
+
+let exportArmed = 0;
+btnExport.addEventListener('click', () => {
+  const L = getTileLayout();
+  const n = L.tiles.filter(tilePrintable).length;
+  if (n > 20 && Date.now() > exportArmed) {
+    exportArmed = Date.now() + 8000;
+    btnExport.textContent = `↓ Confirm — zip ${n} panels`;
+    setTimeout(() => {
+      if (Date.now() > exportArmed - 200) {
+        btnExport.textContent = '↓ Export all panels (one zip)';
+        exportArmed = 0;
+      }
+    }, 8000);
+    return;
+  }
+  exportArmed = 0;
+  btnExport.textContent = '↓ Export all panels (one zip)';
+  exportTiles(L.tiles, mode === 'shed' ? 'the whole building' : 'the wall');
+});
+btnExportSurf.addEventListener('click', () => {
+  if (activeSurf === 'all') return;
+  const L = getTileLayout(), s = surfByCode(activeSurf);
+  exportTiles(L.bySurf[activeSurf], s.name);
+});
+btnExportOne.addEventListener('click', async () => {
+  if (!maskData || !selectedPanel) return;
+  const L = getTileLayout();
+  const t = L.tiles.find(q => q.surf === selectedPanel.surf
+    && q.row === selectedPanel.row && q.col === selectedPanel.col);
+  if (!t) { setStatus('That panel is no longer in the layout', 'err'); return; }
+  btnExportOne.disabled = true;
+  setStatus('Building panel STL…'); await tick();
+  try {
+    const { px0, py0, pw, ph } = tilePixels(t);
+    if (pw <= 0 || ph <= 0 || !tilePrintable(t)) {
+      setStatus(`${tileLabel(t)} has nothing to print — it falls outside the surface or inside the door`, 'err');
+    } else {
+      const buf = buildPanelSTL(px0, py0, pw, ph, t.w, t.h, extH(), baseH(), tileLabel(t), t.piece);
+      triggerDownload(buf, `wallweaver_${tileLabel(t)}.stl`);
+      setStatus(`Downloaded ${tileLabel(t)} — ${(buf.byteLength/1024).toFixed(0)} KB`, 'ok');
+    }
+  } catch (e) { setStatus('Error: ' + e.message, 'err'); }
+  btnExportOne.disabled = false;
+});
+
+// ── Assembly map ──────────────────────────────────────────────────────────────
+$('btnAssemblyMap').addEventListener('click', () => {
+  if (!maskData) return;
+  const L = getTileLayout();
+  const MARGIN = 54, HEADER = 92, LEGEND = 92;
+  const DRAW_W = Math.min(1500, Math.max(760, STRIP.w / 6));
+  const SC = DRAW_W / STRIP.w;
+  const DRAW_H = STRIP.h * SC;
+  const dLeaf = doorSurfaceDesc();
+  const LEAF_H = dLeaf ? dLeaf.h * SC + 56 : 0;
+  const mapW = DRAW_W + 2*MARGIN, mapH = DRAW_H + LEAF_H + 2*MARGIN + HEADER + LEGEND;
+
+  const cv = document.createElement('canvas');
+  cv.width = mapW * 2; cv.height = mapH * 2;
+  const ctx = cv.getContext('2d'); ctx.scale(2,2);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, mapW, mapH);
+
+  ctx.fillStyle = '#2d5a3d'; ctx.fillRect(0, 0, mapW, HEADER - 16);
+  ctx.fillStyle = '#fff'; ctx.textBaseline = 'top';
+  ctx.font = 'bold 17px system-ui,sans-serif';
+  ctx.fillText('WallWeaver — Assembly Map', MARGIN, 14);
+  ctx.font = '11px system-ui,sans-serif';
+  const date = new Date().toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'});
+  const desc = mode === 'shed'
+    ? `Gabled shed ${Math.round(getBW())} × ${Math.round(getBD())} mm · eave ${Math.round(getEH())} · ridge ${Math.round(getEH()+getRR())} mm`
+    : `Single wall ${Math.round(getFW())} × ${Math.round(getFH())} mm`;
+  ctx.fillText(`${desc}  ·  Panel ${Math.round(L.pmm)} mm`
+    + (L.frac ? `  ·  ${Math.round(L.frac*100)}% ${L.dir==='rows'?'row':'column'} bond` : '')
+    + `  ·  ${date}`, MARGIN, 38);
+  ctx.fillText('Elevations unrolled left to right: front → right → back → left, with each roof plane folded up above its eave.', MARGIN, 56);
+
+  const X = mx => MARGIN + mx * SC, Y = my => HEADER + my * SC;
+  let print = 0, part = 0;
+
+  const drawTile = (t, x, y, tint) => {
+    const w = t.w*SC, h = t.h*SC;
+    const frac = tileFacadeFrac(t), solid = tilePrintable(t);
+    const isPart = solid && frac < 0.995;
+    if (isPart)     { ctx.fillStyle = '#e7f0c9'; print++; part++; }
+    else if (solid) { ctx.fillStyle = '#d8ead1'; print++; }
+    else            { ctx.fillStyle = '#f4f2ef'; }
+    ctx.fillRect(x, y, w, h);
+    const cut = isPart || t.w < L.pmm - 0.5 || t.h < L.pmm - 0.5;
+    ctx.strokeStyle = solid ? tint : '#d8d4ce';
+    ctx.lineWidth = solid ? 1 : 0.5;
+    ctx.setLineDash(cut ? [4,3] : []);
+    ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+    ctx.setLineDash([]);
+    if (solid && w > 22 && h > 12) {
+      ctx.fillStyle = '#1e3d2a';
+      ctx.font = 'bold ' + Math.max(7, Math.min(11, h*0.34)).toFixed(0) + 'px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(tileLabel(t), x + w/2, y + h/2);
+      if (cut && h > 26) {
+        ctx.fillStyle = '#6b7f6f'; ctx.font = '8px system-ui,sans-serif';
+        ctx.fillText(`${Math.round(t.w)}×${Math.round(t.h)}`, x + w/2, y + h - 7);
+      }
+    }
+  };
+
+  for (const s of SURF) {
+    // surface field
+    ctx.save(); ctx.beginPath();
+    const o = surfOutline(s);
+    ctx.moveTo(X(o[0][0]), Y(o[0][1]));
+    for (let i=1;i<o.length;i++) ctx.lineTo(X(o[i][0]), Y(o[i][1]));
+    ctx.closePath();
+    ctx.fillStyle = '#fbfaf8'; ctx.fill();
+    ctx.restore();
+
+    for (const t of (L.bySurf[s.code] || [])) drawTile(t, X(t.x0), Y(t.y0), s.tint);
+
+    // surface outline + name band
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(X(o[0][0]), Y(o[0][1]));
+    for (let i=1;i<o.length;i++) ctx.lineTo(X(o[i][0]), Y(o[i][1]));
+    ctx.closePath();
+    ctx.strokeStyle = s.tint; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    ctx.fillStyle = s.tint; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.font = 'bold 11px system-ui,sans-serif';
+    ctx.fillText(`${s.tag || 'WALL'} — ${s.name}`, X(s.x0 + s.w/2), Y(s.y0) - 5);
+  }
+
+  // The opening, marked on the elevation as the line the leaf lifts out along
+  if (dLeaf) {
+    const x = X(dLeaf.x0), y = Y(dLeaf.y0), w = dLeaf.w*SC, h = dLeaf.h*SC;
+    ctx.strokeStyle = dLeaf.tint; ctx.lineWidth = 2.2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
+    ctx.fillStyle = dLeaf.tint; ctx.font = 'bold 10px system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    if (w > 60) ctx.fillText('DOOR LEAF — SEE BELOW', x + w/2, y - 4);
+  }
+
+  // The leaf again, laid out flat, so it can be built off the bench
+  let leafBottom = HEADER + DRAW_H;
+  if (dLeaf) {
+    const lx0 = MARGIN, ly0 = HEADER + DRAW_H + 44;
+    ctx.fillStyle = dLeaf.tint; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.font = 'bold 11px system-ui,sans-serif';
+    ctx.fillText(`D — Door leaf, laid flat  ·  ${Math.round(dLeaf.w)} × ${Math.round(dLeaf.h)} mm`
+      + `  ·  keeps the wall's coursing, so the pattern lines up when it is shut`, lx0, ly0 - 6);
+    for (const t of (L.bySurf.D || []))
+      drawTile(t, lx0 + (t.x0 - dLeaf.x0)*SC, ly0 + (t.y0 - dLeaf.y0)*SC, dLeaf.tint);
+    ctx.strokeStyle = dLeaf.tint; ctx.lineWidth = 2;
+    ctx.strokeRect(lx0, ly0, dLeaf.w*SC, dLeaf.h*SC);
+    leafBottom = ly0 + dLeaf.h*SC;
+  }
+
+  // legend
+  const ly = leafBottom + 26, lx = MARGIN;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '11px system-ui,sans-serif';
+  const sw = (x, fill, stroke, label) => {
+    ctx.fillStyle = fill; roundRect(ctx, x, ly, 18, 14, 3); ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.setLineDash([]);
+    roundRect(ctx, x, ly, 18, 14, 3); ctx.stroke();
+    ctx.fillStyle = '#333'; ctx.fillText(label, x + 24, ly + 7);
+  };
+  sw(lx, '#d8ead1', '#2d5a3d', `Print (${print} panels)`);
+  sw(lx + 190, '#e7f0c9', '#2d5a3d', `Cut to a profile or the opening (${part})`);
+  sw(lx + 450, '#f4f2ef', '#d8d4ce', 'Nothing to print — skip');
+  ctx.fillStyle = '#555'; ctx.font = '11px system-ui,sans-serif';
+  ctx.fillText('Panel codes read surface · column · course, counted from each surface’s bottom-left corner: FA1 is the front wall, first column, bottom course.',
+    lx, ly + 34);
+  if (dLeaf) ctx.fillText('Door panels share their wall’s row and column, so DB2 is the piece that lifts out of FB2.', lx, ly + 52);
+
+  const img = cv.toDataURL('image/png');
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WallWeaver Assembly Map</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e8e8e8;display:flex;flex-direction:column;align-items:center;padding:20px;
+     font-family:system-ui,sans-serif;gap:14px}
+img{max-width:100%;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.18);display:block}
+.btns{display:flex;gap:10px}
+button{padding:9px 22px;border-radius:6px;border:none;cursor:pointer;font-size:13px}
+.primary{background:#2d5a3d;color:#fff}.secondary{background:#fff;color:#333;border:1px solid #ccc}
+@media print{body{background:#fff;padding:0}.btns{display:none}}
+</style></head><body>
+<div class="btns"><button class="primary" onclick="window.print()">🖨 Print / Save as PDF</button>
+<button class="secondary" onclick="dl()">⬇ Download PNG</button></div>
+<img id="map" src="${img}" alt="Assembly Map">
+<script>function dl(){const a=document.createElement('a');a.href=document.getElementById('map').src;
+a.download='wallweaver_assembly_map.png';a.click();}<\/script></body></html>`;
+  window.open(URL.createObjectURL(new Blob([html], {type:'text/html'})), '_blank');
+});
+
+// Canvas rounded-rect helper (no Path2D shorthand for compat)
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+let screwsEnabled = true;
+$('togScrews').addEventListener('click', () => {
+  screwsEnabled = !screwsEnabled;
+  $('togScrews').classList.toggle('on', screwsEnabled);
+  $('screwCtls').style.display = screwsEnabled ? '' : 'none';
+});
+
+// ── Screw size selector ────────────────────────────────────────────────────────
+// Clearance hole diameters for standard US wood screws (mm, drill-through fit)
+const SCREW_SIZES = [
+  { label: '#2',  d: 2.4  },
+  { label: '#3',  d: 2.9  },
+  { label: '#4',  d: 3.2  },
+  { label: '#5',  d: 3.6  },
+  { label: '#6',  d: 4.0  },
+  { label: '#8',  d: 4.8  },
+  { label: '#10', d: 5.5  },
+  { label: '#12', d: 6.3  },
+  { label: '1/4"',d: 7.1 },
+];
+let screwDiameter = 4.8; // default #8
+const screwSizeRow = $('screwSizeRow');
+SCREW_SIZES.forEach(sz => {
+  const btn = document.createElement('button');
+  btn.className = 'shape-btn' + (sz.d === screwDiameter ? ' on' : '');
+  btn.style.cssText = 'flex:0 0 auto;min-width:36px;padding:5px 6px;font-size:11px;line-height:1.4';
+  btn.innerHTML = sz.label + '<br><span style="font-size:10px;opacity:.7">' + sz.d.toFixed(1) + 'mm</span>';
+  btn.addEventListener('click', () => {
+    screwDiameter = sz.d;
+    screwSizeRow.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    $('screwSizeHint').textContent = sz.label + ' clearance hole — ⌀' + sz.d.toFixed(1) + ' mm';
+  });
+  screwSizeRow.appendChild(btn);
+});
+$('screwSizeHint').textContent = '#8 clearance hole — ⌀4.8 mm';
+// ── Seeded RNG ─────────────────────────────────────────────────────────────────
+function seedRng(seed) {
+  let s = (seed * 1664525 + 1013904223) >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+let branchBudget = 0;
+function drawBranch(ctx, rng, x, y, angle, length, depth, H, maxLen, params) {
+  if (--branchBudget < 0) return;
+  if (length < 1.2 || depth > (params.maxDepth || 17)) return;
+
+  const lw = Math.max(0.28, (length / maxLen) * params.weight * 4.0);
+  ctx.lineWidth = lw;
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  const x2 = x + Math.cos(angle) * length;
+  const y2 = y + Math.sin(angle) * length;
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  const spreadR = params.spread * Math.PI / 180;
+
+  // Main fork
+  const nMain = (depth >= 1 && depth <= 6 && rng() < 0.28) ? 3 : 2;
+  for (let i = 0; i < nMain; i++) {
+    const frac   = nMain === 1 ? 0 : (i / (nMain - 1) - 0.5);
+    const jitter = (rng() - 0.5) * spreadR * 0.15;
+    const ao     = frac * spreadR * (0.85 + rng() * 0.3) + jitter;
+    const lr     = params.taper + (rng() - 0.5) * 0.06;
+    drawBranch(ctx, rng, x2, y2, angle + ao, length * lr, depth + 1, H, maxLen, params);
+  }
+
+  // Side feathers
+  if (depth >= 1 && depth <= 12 && rng() < 0.58 && length > H * 0.015) {
+    const t      = 0.3 + rng() * 0.45;
+    const midX   = x + (x2 - x) * t;
+    const midY   = y + (y2 - y) * t;
+    const side   = rng() < 0.5 ? 1 : -1;
+    const fLen   = length * (0.35 + rng() * 0.22);
+    const fAngle = angle + side * spreadR * (0.65 + rng() * 0.45);
+    drawBranch(ctx, rng, midX, midY, fAngle, fLen, depth + 3, H, maxLen, params);
+  }
+}
+// ── 5×7 pixel font for embossed tile labels ───────────────────────────────────
+// Each entry: 7 row-bytes, bit4=leftmost pixel, bit0=rightmost pixel
+const FONT5X7 = {
+  '0':[0x0E,0x11,0x13,0x15,0x19,0x11,0x0E],
+  '1':[0x04,0x0C,0x04,0x04,0x04,0x04,0x0E],
+  '2':[0x0E,0x11,0x01,0x06,0x08,0x10,0x1F],
+  '3':[0x0E,0x11,0x01,0x06,0x01,0x11,0x0E],
+  '4':[0x11,0x11,0x11,0x1F,0x01,0x01,0x01],
+  '5':[0x1F,0x10,0x10,0x1E,0x01,0x11,0x0E],
+  '6':[0x06,0x08,0x10,0x1E,0x11,0x11,0x0E],
+  '7':[0x1F,0x01,0x02,0x04,0x08,0x08,0x08],
+  '8':[0x0E,0x11,0x11,0x0E,0x11,0x11,0x0E],
+  '9':[0x0E,0x11,0x11,0x0F,0x01,0x02,0x0C],
+  'A':[0x0E,0x11,0x11,0x1F,0x11,0x11,0x11],
+  'B':[0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E],
+  'C':[0x0E,0x11,0x10,0x10,0x10,0x11,0x0E],
+  'D':[0x1C,0x12,0x11,0x11,0x11,0x12,0x1C],
+  'E':[0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F],
+  'F':[0x1F,0x10,0x10,0x1E,0x10,0x10,0x10],
+  'G':[0x0E,0x11,0x10,0x17,0x11,0x11,0x0E],
+  'H':[0x11,0x11,0x11,0x1F,0x11,0x11,0x11],
+  'I':[0x0E,0x04,0x04,0x04,0x04,0x04,0x0E],
+  'J':[0x01,0x01,0x01,0x01,0x01,0x11,0x0E],
+  'K':[0x11,0x12,0x14,0x18,0x14,0x12,0x11],
+  'L':[0x10,0x10,0x10,0x10,0x10,0x10,0x1F],
+  'M':[0x11,0x1B,0x15,0x15,0x11,0x11,0x11],
+  'N':[0x11,0x19,0x15,0x13,0x11,0x11,0x11],
+  'O':[0x0E,0x11,0x11,0x11,0x11,0x11,0x0E],
+  'P':[0x1E,0x11,0x11,0x1E,0x10,0x10,0x10],
+  'Q':[0x0E,0x11,0x11,0x11,0x15,0x12,0x0D],
+  'R':[0x1E,0x11,0x11,0x1E,0x14,0x12,0x11],
+  'S':[0x0F,0x10,0x10,0x0E,0x01,0x01,0x1E],
+  'T':[0x1F,0x04,0x04,0x04,0x04,0x04,0x04],
+  'U':[0x11,0x11,0x11,0x11,0x11,0x11,0x0E],
+  'V':[0x11,0x11,0x11,0x11,0x0A,0x0A,0x04],
+  'W':[0x11,0x11,0x11,0x15,0x15,0x1B,0x11],
+  'X':[0x11,0x11,0x0A,0x04,0x0A,0x11,0x11],
+  'Y':[0x11,0x11,0x0A,0x04,0x04,0x04,0x04],
+  'Z':[0x1F,0x01,0x02,0x04,0x08,0x10,0x1F]
+};
+
+function colLabel(c) {
+  const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  return c < 26 ? L[c] : L[Math.floor(c / 26) - 1] + L[c % 26];
+}
+// ── Build STL for one panel region ────────────────────────────────────────────
+function buildPanelSTL(px0, py0, pw, ph, physW, physH, extH, baseH, labelText, piece) {
+  const bH         = Math.max(0.4, baseH);
+  const zBot       = 0;
+  const zBase      = bH;
+  const zTop       = bH + extH;
+  const meshSpc    = Math.max(1, parseFloat(document.getElementById('sMesh').value));    // mm
+  const meshStrandW= Math.max(0.4, parseFloat(document.getElementById('sMeshW').value)); // mm
+  const LEVELS     = Math.max(1, parseInt(document.getElementById('sLevels').value));    // relief tiers
+
+  // ── Upsample panel to a working grid that guarantees mesh resolution ───────
+  // We need at least (physW / meshSpc) * 4 pixels across so each mesh cell
+  // spans ≥ 4 pixels, making strand vs gap unambiguous.
+  const minPx  = Math.ceil(physW / meshSpc) * 6;
+  const scale  = Math.max(1, Math.ceil(minPx / pw));  // integer upscale factor
+  const rW     = pw * scale;   // working pixel width
+  const rH     = ph * scale;   // working pixel height
+  const mmPxW  = physW / rW;
+  const mmPxH  = physH / rH;
+
+  // Upsample laceMap using nearest-neighbour
+  // Y is flipped: screen rows increase downward, but STL Y increases upward,
+  // so we mirror vertically to avoid the print coming out as a mirror image.
+  const laceMap = new Uint8Array(rW * rH);
+  for (let ry = 0; ry < rH; ry++) {
+    const sy = py0 + Math.floor((rH - 1 - ry) / scale);
+    for (let rx2 = 0; rx2 < rW; rx2++) {
+      const sx = px0 + Math.floor(rx2 / scale);
+      laceMap[ry * rW + rx2] = maskData[sy * maskW + sx]; // carries relief level 0..LEVELS
+    }
+  }
+  // Snapshot of the pattern BEFORE screw holes/collars clear pixels —
+  // the cordonnet uses this so drilled voids don't read as pattern edges.
+  const laceRaw = laceMap.slice();
+
+  // Build meshMap in mm space — now safe because mmPxW << meshSpc
+  // Axis-aligned mesh grid running on x and y axes
+  const meshMap = new Uint8Array(rW * rH);
+  for (let ry = 0; ry < rH; ry++) {
+    for (let rx2 = 0; rx2 < rW; rx2++) {
+      const cx = (rx2 + 0.5) * mmPxW;
+      const cy = (ry  + 0.5) * mmPxH;
+      const rx3 = ((cx % meshSpc) + meshSpc) % meshSpc;
+      const ry3 = ((cy % meshSpc) + meshSpc) % meshSpc;
+      if (rx3 < meshStrandW || ry3 < meshStrandW) meshMap[ry * rW + rx2] = 1;
+    }
+  }
+
+  // ── Facade clip ─────────────────────────────────────────────────────────────
+  // Built BEFORE the screw pass so fixings can be kept inside the cut profile.
+  // Same Y-flip as the laceMap upsample:
+  //   STL ry=0 → mask row (py0+ph-1) = bottom of facade area
+  //   STL ry=rH-1 → mask row py0     = top of facade area (near roof)
+  const facadeInside = new Uint8Array(rW * rH);
+  let insideCount = 0;
+  for (let ry = 0; ry < rH; ry++) {
+    const sy = py0 + Math.floor((rH - 1 - ry) / scale);
+    for (let rx2 = 0; rx2 < rW; rx2++) {
+      const sx = px0 + Math.floor(rx2 / scale);
+      if (isInsideStrip(sx / maskW, sy / maskH, piece || 'wall')) { facadeInside[ry * rW + rx2] = 1; insideCount++; }
+    }
+  }
+  const isPartialPanel = insideCount < rW * rH * 0.995;
+
+  // Centroid of the remaining material — the safe direction to pull
+  // fixings and the embossed label toward on a profile-cut panel.
+  let matCX = physW / 2, matCY = physH / 2;
+  if (isPartialPanel && insideCount) {
+    let sumX = 0, sumY = 0;
+    for (let ry = 0; ry < rH; ry++)
+      for (let rx2 = 0; rx2 < rW; rx2++)
+        if (facadeInside[ry * rW + rx2]) { sumX += (rx2 + 0.5) * mmPxW; sumY += (ry + 0.5) * mmPxH; }
+    matCX = sumX / insideCount; matCY = sumY / insideCount;
+  }
+
+  // mm point → is it inside the cut profile, with `clr` mm of material all round?
+  const insideAt = (mx, my) => {
+    const ix = Math.floor(mx / mmPxW), iy = Math.floor(my / mmPxH);
+    return ix >= 0 && iy >= 0 && ix < rW && iy < rH && facadeInside[iy * rW + ix] === 1;
+  };
+  const hasClearance = (mx, my, clr) => {
+    if (!insideAt(mx, my)) return false;
+    for (let a = 0; a < 12; a++) {
+      const th = a * Math.PI / 6;
+      if (!insideAt(mx + Math.cos(th) * clr, my + Math.sin(th) * clr)) return false;
+    }
+    return true;
+  };
+
+  // ── Screw holes ───────────────────────────────────────────────────────────
+  // Each hole has: an open void (radius screwR) + a solid collar (2 mm wide, full height zBot→zTop)
+  const collarMap = new Uint8Array(rW * rH);
+  if (screwsEnabled) {
+    const screwInset = parseFloat(document.getElementById('sScrewI').value); // mm
+    const screwR     = screwDiameter / 2; // half diameter — set by screw size selector
+    const ringW      = getCollarW();   // mm — solid collar around each hole
+    const outerR     = screwR + ringW;
+    let screwCx = [screwInset, physW - screwInset, screwInset,         physW - screwInset];
+    let screwCy = [screwInset, screwInset,          physH - screwInset, physH - screwInset];
+
+    // On a profile-cut panel the nominal corners can fall in the void above a
+    // gable slope or outside an arch head. Walk each fixing in toward the
+    // centroid of the remaining material until it has full collar clearance;
+    // drop it if no valid position exists.
+    if (isPartialPanel) {
+      const cX = matCX, cY = matCY;
+      const kx = [], ky = [];
+      for (let h = 0; h < 4; h++) {
+        let px = screwCx[h], py = screwCy[h], placed = false;
+        const dx = cX - px, dy = cY - py;
+        const dist = Math.hypot(dx, dy) || 1;
+        const stepN = Math.max(1, Math.ceil(dist / (outerR * 0.5)));
+        for (let s = 0; s <= stepN; s++) {
+          const tx = px + dx * (s / stepN), ty = py + dy * (s / stepN);
+          if (hasClearance(tx, ty, outerR)) { kx.push(tx); ky.push(ty); placed = true; break; }
+        }
+        if (!placed) { /* no room on this corner — fixing omitted */ }
+      }
+      screwCx = kx; screwCy = ky;
+    }
+
+    const screwR2  = screwR  * screwR;
+    const outerR2  = outerR  * outerR;
+    const nScrews  = screwCx.length;
+    for (let ry = 0; ry < rH; ry++) {
+      for (let rx2 = 0; rx2 < rW; rx2++) {
+        const cx = (rx2 + 0.5) * mmPxW;
+        const cy = (ry  + 0.5) * mmPxH;
+        for (let h = 0; h < nScrews; h++) {
+          const dx = cx - screwCx[h], dy = cy - screwCy[h];
+          const d2 = dx*dx + dy*dy;
+          if (d2 <= screwR2) {
+            // Inside hole — clear everything (void through full thickness)
+            laceMap[ry * rW + rx2] = 0;
+            meshMap[ry * rW + rx2] = 0;
+            collarMap[ry * rW + rx2] = 0;
+            break;
+          } else if (d2 <= outerR2) {
+            // Inside solid collar — mark for full-height rendering, suppress lace & mesh
+            collarMap[ry * rW + rx2] = 1;
+            laceMap[ry * rW + rx2] = 0;
+            meshMap[ry * rW + rx2] = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Clip every layer to this piece. The mask carries lace right across the door
+  // opening, so a wall panel beside the door has to have that lace trimmed off,
+  // and the door panel keeps only what falls inside the leaf.
+  for (let i = 0; i < rW * rH; i++) {
+    if (!facadeInside[i]) { meshMap[i] = 0; collarMap[i] = 0; laceMap[i] = 0; laceRaw[i] = 0; }
+  }
+
+  const lGet = (x,y) => (x>=0&&y>=0&&x<rW&&y<rH) ? laceMap[y*rW+x]   : 0;
+  const mGet = (x,y) => (x>=0&&y>=0&&x<rW&&y<rH) ? meshMap[y*rW+x]   : 0;
+  const cGet = (x,y) => (x>=0&&y>=0&&x<rW&&y<rH) ? collarMap[y*rW+x] : 0;
+
+  const tris = [];
+  const addTri = (n,a,b,c) =>
+    tris.push(n[0],n[1],n[2], a[0],a[1],a[2], b[0],b[1],b[2], c[0],c[1],c[2]);
+  const quad = (n,a,b,c,d) => { addTri(n,a,b,c); addTri(n,a,c,d); };
+
+  // ── Face merging ──────────────────────────────────────────────────────────
+  // Every layer is a field of tiny cells. One quad per cell turns a 400 mm panel
+  // into roughly a million triangles; merging cells that share a height into the
+  // largest rectangles that fit gives exactly the same surface for a fraction of
+  // the file. greedyRects covers flat faces; runsX / runsY merge the side walls.
+  const qz = z => Math.round(z * 1000);
+  const key2 = (a, b) => (qz(a) + 1) * 100000 + (qz(b) + 1);
+  const unA  = k => (Math.floor(k / 100000) - 1) / 1000;
+  const unB  = k => ((k % 100000) - 1) / 1000;
+
+  function greedyRects(keyAt) {
+    const done = new Uint8Array(rW * rH), out = [];
+    for (let y = 0; y < rH; y++) {
+      for (let x = 0; x < rW; x++) {
+        const i = y * rW + x;
+        if (done[i]) continue;
+        const k = keyAt(x, y);
+        if (!k) { done[i] = 1; continue; }
+        let w = 1;
+        while (x + w < rW && !done[i + w] && keyAt(x + w, y) === k) w++;
+        let h = 1;
+        grow: while (y + h < rH) {
+          for (let dx = 0; dx < w; dx++) {
+            const j = (y + h) * rW + x + dx;
+            if (done[j] || keyAt(x + dx, y + h) !== k) break grow;
+          }
+          h++;
+        }
+        for (let dy = 0; dy < h; dy++)
+          for (let dx = 0; dx < w; dx++) done[(y + dy) * rW + x + dx] = 1;
+        out.push([x, y, w, h, k]);
+      }
+    }
+    return out;
+  }
+  function runsX(keyAt) {            // horizontal runs — walls facing ±y
+    const out = [];
+    for (let y = 0; y < rH; y++) {
+      let s = 0, k = 0;
+      for (let x = 0; x <= rW; x++) {
+        const kk = x < rW ? keyAt(x, y) : 0;
+        if (kk !== k) { if (k) out.push([s, x, y, k]); s = x; k = kk; }
+      }
+    }
+    return out;
+  }
+  function runsY(keyAt) {            // vertical runs — walls facing ±x
+    const out = [];
+    for (let x = 0; x < rW; x++) {
+      let s = 0, k = 0;
+      for (let y = 0; y <= rH; y++) {
+        const kk = y < rH ? keyAt(x, y) : 0;
+        if (kk !== k) { if (k) out.push([s, y, x, k]); s = y; k = kk; }
+      }
+    }
+    return out;
+  }
+  // one slab layer: flat top at zHi, flat bottom at zLo, walls where `occ` stops
+  function emitSlab(occ, zLo, zHi, topOcc) {
+    greedyRects((x,y) => occ(x,y) ? 1 : 0).forEach(([x,y,w,h]) => {
+      const x0=x*mmPxW, x1=(x+w)*mmPxW, y0=y*mmPxH, y1=(y+h)*mmPxH;
+      quad([0,0,-1],[x0,y0,zLo],[x0,y1,zLo],[x1,y1,zLo],[x1,y0,zLo]);
+    });
+    greedyRects((x,y) => topOcc(x,y) ? 1 : 0).forEach(([x,y,w,h]) => {
+      const x0=x*mmPxW, x1=(x+w)*mmPxW, y0=y*mmPxH, y1=(y+h)*mmPxH;
+      quad([0,0,1],[x0,y0,zHi],[x1,y0,zHi],[x1,y1,zHi],[x0,y1,zHi]);
+    });
+    runsY((x,y) => (occ(x,y) && !occ(x-1,y)) ? 1 : 0).forEach(([ya,yb,x]) => {
+      const x0=x*mmPxW, y0=ya*mmPxH, y1=yb*mmPxH;
+      quad([-1,0,0],[x0,y0,zLo],[x0,y0,zHi],[x0,y1,zHi],[x0,y1,zLo]);
+    });
+    runsY((x,y) => (occ(x,y) && !occ(x+1,y)) ? 1 : 0).forEach(([ya,yb,x]) => {
+      const x1=(x+1)*mmPxW, y0=ya*mmPxH, y1=yb*mmPxH;
+      quad([1,0,0],[x1,y0,zLo],[x1,y1,zLo],[x1,y1,zHi],[x1,y0,zHi]);
+    });
+    runsX((x,y) => (occ(x,y) && !occ(x,y-1)) ? 1 : 0).forEach(([xa,xb,y]) => {
+      const y0=y*mmPxH, x0=xa*mmPxW, x1=xb*mmPxW;
+      quad([0,-1,0],[x0,y0,zLo],[x1,y0,zLo],[x1,y0,zHi],[x0,y0,zHi]);
+    });
+    runsX((x,y) => (occ(x,y) && !occ(x,y+1)) ? 1 : 0).forEach(([xa,xb,y]) => {
+      const y1=(y+1)*mmPxH, x0=xa*mmPxW, x1=xb*mmPxW;
+      quad([0,1,0],[x0,y1,zLo],[x0,y1,zHi],[x1,y1,zHi],[x1,y1,zLo]);
+    });
+  }
+
+  // ── Mesh base layer (zBot → zBase) ────────────────────────────────────────
+  emitSlab((x,y) => mGet(x,y),
+           zBot, zBase,
+           (x,y) => mGet(x,y) && !lGet(x,y) && !cGet(x,y));
+
+  // ── Lace strand layer: relief levels + cordonnet raised edging ────────────
+  const zOfL   = l => zBase + extH * l / LEVELS;    // top height for relief level l
+  const topMap = new Float32Array(rW * rH);         // final top Z per lace pixel
+  for (let i = 0; i < rW * rH; i++) if (laceMap[i]) topMap[i] = zOfL(laceMap[i]);
+
+  const cordH = parseFloat(document.getElementById('sCordH').value); // bead height (mm)
+  const cordW = parseFloat(document.getElementById('sCordW').value); // bead reach (mm)
+  if (cordH > 0) {
+    // Occupancy that looks BEYOND the panel seam into the full facade mask,
+    // so tile joints where a motif continues do NOT read as edges.
+    const wantMat = piece === 'door' ? 2 : 1;
+    const occAt = (nx2, ny2) => {
+      if (nx2 >= 0 && ny2 >= 0 && nx2 < rW && ny2 < rH) return laceRaw[ny2 * rW + nx2];
+      const sx = px0 + Math.floor(nx2 / scale);
+      const sy = py0 + Math.floor((rH - 1 - ny2) / scale);
+      if (sx < 0 || sy < 0 || sx >= maskW || sy >= maskH) return 0;
+      // a neighbour on the other side of the door reveal is not "more pattern"
+      if (insideMap && insideMap[sy * maskW + sx] !== wantMat) return 0;
+      return maskData[sy * maskW + sx];
+    };
+    const bandPx = Math.max(1, Math.ceil(cordW / Math.min(mmPxW, mmPxH)));
+    for (let ry = 0; ry < rH; ry++) {
+      for (let rx2 = 0; rx2 < rW; rx2++) {
+        if (!laceMap[ry * rW + rx2]) continue;
+        let d2min = Infinity; // squared mm distance to nearest empty pixel
+        for (let dy = -bandPx; dy <= bandPx; dy++) {
+          for (let dx = -bandPx; dx <= bandPx; dx++) {
+            if (!dx && !dy) continue;
+            if (occAt(rx2 + dx, ry + dy)) continue;
+            const dmm2 = dx * dx * mmPxW * mmPxW + dy * dy * mmPxH * mmPxH;
+            if (dmm2 < d2min) d2min = dmm2;
+          }
+        }
+        if (d2min === Infinity) continue;
+        const d = Math.sqrt(d2min);
+        if (d >= cordW) continue;
+        const t = 1 - d / cordW;                        // 1 at the rim, 0 at inner limit
+        topMap[ry * rW + rx2] += cordH * Math.sqrt(t * (2 - t)); // rounded bead profile
+      }
+    }
+  }
+
+  // Top height getter: empty or out-of-panel neighbours read as zBase so
+  // outer walls drop to the base, exactly as before.
+  const tGet = (x,y) => (x>=0&&y>=0&&x<rW&&y<rH && laceMap[y*rW+x]) ? topMap[y*rW+x] : zBase;
+
+  // Snap every top height to 1 µm so neighbouring cells compare exactly and
+  // merge into one face instead of leaving hairline seams.
+  for (let i = 0; i < rW * rH; i++) if (laceMap[i]) topMap[i] = qz(topMap[i]) / 1000;
+
+  greedyRects((x,y) => lGet(x,y) ? qz(topMap[y*rW+x]) + 1 : 0).forEach(([x,y,w,h,k]) => {
+    const zT=(k-1)/1000, x0=x*mmPxW, x1=(x+w)*mmPxW, y0=y*mmPxH, y1=(y+h)*mmPxH;
+    quad([0,0,1],[x0,y0,zT],[x1,y0,zT],[x1,y1,zT],[x0,y1,zT]);
+  });
+  greedyRects((x,y) => lGet(x,y) ? 1 : 0).forEach(([x,y,w,h]) => {
+    const x0=x*mmPxW, x1=(x+w)*mmPxW, y0=y*mmPxH, y1=(y+h)*mmPxH;
+    quad([0,0,-1],[x0,y0,zBase],[x0,y1,zBase],[x1,y1,zBase],[x1,y0,zBase]);
+  });
+  const stepKey = (x, y, nx, ny) => {
+    if (!lGet(x,y)) return 0;
+    const zT = topMap[y*rW+x], nz = tGet(nx, ny);
+    return nz < zT - 1e-9 ? key2(zT, nz) : 0;
+  };
+  runsY((x,y) => stepKey(x,y,x-1,y)).forEach(([ya,yb,x,k]) => {
+    const zT=unA(k), nz=unB(k), x0=x*mmPxW, y0=ya*mmPxH, y1=yb*mmPxH;
+    quad([-1,0,0],[x0,y0,nz],[x0,y0,zT],[x0,y1,zT],[x0,y1,nz]);
+  });
+  runsY((x,y) => stepKey(x,y,x+1,y)).forEach(([ya,yb,x,k]) => {
+    const zT=unA(k), nz=unB(k), x1=(x+1)*mmPxW, y0=ya*mmPxH, y1=yb*mmPxH;
+    quad([1,0,0],[x1,y0,nz],[x1,y1,nz],[x1,y1,zT],[x1,y0,zT]);
+  });
+  runsX((x,y) => stepKey(x,y,x,y-1)).forEach(([xa,xb,y,k]) => {
+    const zT=unA(k), nz=unB(k), y0=y*mmPxH, x0=xa*mmPxW, x1=xb*mmPxW;
+    quad([0,-1,0],[x0,y0,nz],[x1,y0,nz],[x1,y0,zT],[x0,y0,zT]);
+  });
+  runsX((x,y) => stepKey(x,y,x,y+1)).forEach(([xa,xb,y,k]) => {
+    const zT=unA(k), nz=unB(k), y1=(y+1)*mmPxH, x0=xa*mmPxW, x1=xb*mmPxW;
+    quad([0,1,0],[x0,y1,nz],[x0,y1,zT],[x1,y1,zT],[x1,y1,nz]);
+  });
+
+  // ── Collar layer (zBot → zTop, full height) ──────────────────────────────
+  emitSlab((x,y) => cGet(x,y), zBot, zTop, (x,y) => cGet(x,y));
+
+  // ── Embossed tile label on front face ────────────────────────────────────────
+  // Characters are full-depth pillars (z = 0 → zTop + ed) so every label
+  // is anchored to the very bottom of the print, never floating on relief.
+  let labelFits = true;
+  if (labelsEnabled) {
+    const ps    = labelPixelSize;       // mm per font pixel (S=1.0 M=1.5 L=2.0)
+    const gap   = ps * 0.8;            // gap between characters
+    const ed    = Math.max(0.8, ps);   // protrusion height above front face
+    const charW = 5 * ps + gap;
+    const charH = 7 * ps;
+    const mgn   = Math.max(3, ps * 2); // margin from panel edge
+
+    const label  = labelText;
+    const totalW = label.length * charW - gap;
+
+    // When screw holes are on, offset each corner to clear the collar ring.
+    const si  = screwsEnabled ? parseFloat(document.getElementById('sScrewI').value) : mgn;
+    const or  = screwsEnabled ? screwDiameter / 2 + getCollarW() : 0;
+    const clr = 1.5; // clearance gap above/below collar (mm)
+
+    // Edge margin that keeps labels clear of screw collars at each corner
+    const mgnX_L = screwsEnabled ? si - or        : mgn; // left edge of label on left side
+    const mgnX_R = screwsEnabled ? si - or        : mgn; // same inset from right edge
+    const mgnY_B = screwsEnabled ? si + or + clr  : mgn; // bottom of label above BL/BR collar
+    const mgnY_T = screwsEnabled ? si + or + clr  : mgn; // clearance below TL/TR collar
+
+    // Corner anchor (x = left of label block, y = bottom of characters)
+    // STL Y increases upward, so "top" of panel = physH
+    let cxBase, cyBase;
+    if      (labelCorner === 'tl') { cxBase = mgnX_L;                 cyBase = physH - mgnY_T - charH; }
+    else if (labelCorner === 'tr') { cxBase = physW - mgnX_R - totalW; cyBase = physH - mgnY_T - charH; }
+    else if (labelCorner === 'br') { cxBase = physW - mgnX_R - totalW; cyBase = mgnY_B; }
+    else                           { cxBase = mgnX_L;                 cyBase = mgnY_B; } // bl (default)
+
+    // Clamp to stay within panel bounds
+    cxBase = Math.max(0, Math.min(physW - totalW, cxBase));
+    cyBase = Math.max(0, Math.min(physH - charH,  cyBase));
+
+    // On a profile-cut panel the chosen corner may sit in the void above a
+    // gable slope, which would emit the label as a detached blob. Slide the
+    // whole label block toward the material centroid until it sits on solid.
+    if (isPartialPanel) {
+      // Sample the whole glyph block on a grid — a diagonal gable cut can pass
+      // a corners-only test while a letter still pokes over the line.
+      const fits = (bx, by) => {
+        for (let gy2 = 0; gy2 <= 4; gy2++)
+          for (let gx2 = 0; gx2 <= 8; gx2++)
+            if (!insideAt(bx + totalW * gx2 / 8, by + charH * gy2 / 4)) return false;
+        return true;
+      };
+      if (!fits(cxBase, cyBase)) {
+        const tX = Math.max(0, Math.min(physW - totalW, matCX - totalW / 2));
+        const tY = Math.max(0, Math.min(physH - charH,  matCY - charH  / 2));
+        const dx = tX - cxBase, dy = tY - cyBase;
+        const steps = 24;
+        let ok = false;
+        for (let s = 1; s <= steps; s++) {
+          const bx = cxBase + dx * (s / steps), by = cyBase + dy * (s / steps);
+          if (fits(bx, by)) { cxBase = bx; cyBase = by; ok = true; break; }
+        }
+        if (!ok) labelFits = false;   // no room — skip the emboss on this sliver
+      }
+    }
+
+    const zLab0 = zBot;      // label extends to the very bottom of the print
+    const zPeak = zTop + ed; // proud tip of letter
+
+    for (let ci = 0; labelFits && ci < label.length; ci++) {
+      const fontRows = FONT5X7[label[ci]];
+      if (!fontRows) continue;
+      const cxLeft = cxBase + ci * charW;
+
+      for (let fr = 0; fr < 7; fr++) {
+        const bits = fontRows[fr];
+        // fr=0 is top row of bitmap → highest y in STL
+        const yb = cyBase + (6 - fr) * ps;
+        const yt = yb + ps;
+
+        for (let fc = 0; fc < 5; fc++) {
+          if (!(bits >> (4 - fc) & 1)) continue;
+          const xl = cxLeft + fc * ps;
+          const xr = xl + ps;
+
+          // Six faces of each voxel (closed manifold)
+          quad([0,0,1],  [xl,yb,zPeak],[xr,yb,zPeak],[xr,yt,zPeak],[xl,yt,zPeak]); // front (proud face)
+          quad([0,0,-1], [xl,yb,zLab0],[xl,yt,zLab0],[xr,yt,zLab0],[xr,yb,zLab0]); // back (build plate)
+          quad([-1,0,0], [xl,yb,zLab0],[xl,yb,zPeak],[xl,yt,zPeak],[xl,yt,zLab0]); // left
+          quad([1,0,0],  [xr,yb,zLab0],[xr,yt,zLab0],[xr,yt,zPeak],[xr,yb,zPeak]); // right
+          quad([0,-1,0], [xl,yb,zLab0],[xr,yb,zLab0],[xr,yb,zPeak],[xl,yb,zPeak]); // bottom
+          quad([0,1,0],  [xl,yt,zLab0],[xl,yt,zPeak],[xr,yt,zPeak],[xr,yt,zLab0]); // top
+        }
+      }
+    }
+  } // end labelsEnabled
+
+  const numTris = tris.length / 12;
+  const buf = new ArrayBuffer(80 + 4 + numTris * 50);
+  const dv  = new DataView(buf);
+  const hdr = 'WallWeaver Panel';
+  for (let i=0;i<80;i++) dv.setUint8(i, i<hdr.length ? hdr.charCodeAt(i) : 0);
+  dv.setUint32(80, numTris, true);
+  let off = 84;
+  for (let t=0;t<numTris;t++) {
+    const b=t*12;
+    for (let f=0;f<12;f++) { dv.setFloat32(off,tris[b+f],true); off+=4; }
+    dv.setUint16(off,0,true); off+=2;
+  }
+  return buf;
+}
+
+function triggerDownload(buf, filename) {
+  const blob = (buf instanceof Blob) ? buf : new Blob([buf], {type:'application/octet-stream'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  // Object URLs pin their blob for the life of the page. Exporting a whole
+  // building used to leave a thousand of them alive and the tab would run out
+  // of memory long before the last panel; release it once the download starts.
+  setTimeout(() => URL.revokeObjectURL(url), 20000);
+}
+
+// ── ZIP writer ────────────────────────────────────────────────────────────────
+// A building's worth of panels is more than a gigabyte of STL, so the whole
+// archive can never sit in the JS heap. Each entry is turned into a Blob as
+// soon as it is compressed — the browser is free to spill those to disk — and
+// the final archive is a Blob assembled from those references rather than a
+// copy. Deflate comes from the platform's own CompressionStream, so there is
+// no library to load and the app stays a single file that runs offline.
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+async function deflateRaw(u8) {
+  if (typeof CompressionStream === 'undefined') return null;
+  try {
+    const s = new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  } catch (e) { return null; }
+}
+function dosStamp(d) {
+  return {
+    time: ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF,
+    date: (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF
+  };
+}
+const zipSafe = s => String(s)
+  .replace(/[\u2012-\u2015\u2212]/g, '-')            // dashes the UI uses -> plain hyphen
+  .replace(/[^A-Za-z0-9._()\- ]+/g, ' ')
+  .replace(/\s+/g, ' ').trim();
+
+const ZIP64_LIMIT = 4 * 1024 * 1024 * 1024 - 1;
+class ZipBuilder {
+  constructor() {
+    this.parts = []; this.entries = []; this.offset = 0;
+    this.stamp = dosStamp(new Date());
+  }
+  async add(name, u8) {
+    const crc = crc32(u8);
+    let data = await deflateRaw(u8), method = 8;
+    if (!data || data.length >= u8.length) { data = u8; method = 0; }   // never inflate
+    const nb = new TextEncoder().encode(name);
+    const lh = new Uint8Array(30 + nb.length);
+    const dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 0, true);
+    dv.setUint16(8, method, true);
+    dv.setUint16(10, this.stamp.time, true); dv.setUint16(12, this.stamp.date, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, data.length, true);
+    dv.setUint32(22, u8.length, true);
+    dv.setUint16(26, nb.length, true); dv.setUint16(28, 0, true);
+    lh.set(nb, 30);
+    this.entries.push({ nb, crc, comp: data.length, unc: u8.length,
+                        method, offset: this.offset });
+    this.parts.push(new Blob([lh, data]));
+    this.offset += lh.length + data.length;
+    if (this.offset > ZIP64_LIMIT)
+      throw new Error('the archive passed 4 GB, which this zip format cannot address — '
+                    + 'export one surface at a time, or one of each identical panel');
+    return { method, comp: data.length, unc: u8.length };
+  }
+  finish() {
+    const cd = [];
+    let cdSize = 0;
+    for (const e of this.entries) {
+      const h = new Uint8Array(46 + e.nb.length);
+      const dv = new DataView(h.buffer);
+      dv.setUint32(0, 0x02014b50, true);
+      dv.setUint16(4, 20, true); dv.setUint16(6, 20, true);
+      dv.setUint16(8, 0, true);  dv.setUint16(10, e.method, true);
+      dv.setUint16(12, this.stamp.time, true); dv.setUint16(14, this.stamp.date, true);
+      dv.setUint32(16, e.crc, true);
+      dv.setUint32(20, e.comp, true);
+      dv.setUint32(24, e.unc, true);
+      dv.setUint16(28, e.nb.length, true);
+      dv.setUint16(30, 0, true); dv.setUint16(32, 0, true);
+      dv.setUint16(34, 0, true); dv.setUint16(36, 0, true);
+      dv.setUint32(38, 0, true);
+      dv.setUint32(42, e.offset, true);
+      h.set(e.nb, 46);
+      cd.push(h); cdSize += h.length;
+    }
+    const eo = new Uint8Array(22);
+    const dv = new DataView(eo.buffer);
+    dv.setUint32(0, 0x06054b50, true);
+    dv.setUint16(4, 0, true); dv.setUint16(6, 0, true);
+    dv.setUint16(8, this.entries.length, true);
+    dv.setUint16(10, this.entries.length, true);
+    dv.setUint32(12, cdSize, true);
+    dv.setUint32(16, this.offset, true);
+    dv.setUint16(20, 0, true);
+    return new Blob([...this.parts, ...cd, eo], { type: 'application/zip' });
+  }
+}
+// ── Boot ──────────────────────────────────────────────────────────────────────
+refreshModel();
+syncBondUI();
+updateResHint();
+updateExportInfo();
+setStatus('Ready — set the shed size, then generate or upload a pattern');
+renderTab();
+</script>
+</body>
+</html>
